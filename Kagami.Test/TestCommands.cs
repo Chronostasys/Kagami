@@ -2,7 +2,9 @@ using Kagami.Function;
 using Konata.Core.Message;
 using Konata.Core.Message.Model;
 using NUnit.Framework;
+using PixivCS;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Kagami.Test;
@@ -76,6 +78,25 @@ public class Tests
             Console.WriteLine(Command.OnCommandEval
                 (messageChain.Build()).Build());
         }
+        Assert.Pass();
+    }
+    [Test]
+    public async Task OnCrawl()
+    {
+        var c = new Crawler();
+
+        Assert.Pass();
+    }
+    [Test]
+    public async Task OnPixivCrawl()
+    {
+        var c = new PixivAppAPI();
+        await c.AuthAsync("1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w");
+        await File.WriteAllTextAsync("refreshtoken",c.RefreshToken);
+        var rec = await c.GetIllustRecommendedAsync();
+
+        await c.DownloadAsync(rec.Illusts[0].ImageUrls.Large.ToString(),"1.jpg");
+
         Assert.Pass();
     }
 }

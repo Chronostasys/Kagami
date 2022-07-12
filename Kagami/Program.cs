@@ -7,6 +7,7 @@ using Konata.Core.Interfaces.Api;
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Kagami;
@@ -14,9 +15,28 @@ namespace Kagami;
 public static class Program
 {
     private static Bot _bot = null!;
+    internal static PixivCS.PixivAppAPI pixivAPI = new();
 
     public static async Task Main()
     {
+        var token = await File.ReadAllTextAsync("pixiv.refreshtoken");
+        Task.Run(async () =>
+        {
+            while (true)
+            {
+                try
+                {
+                    await pixivAPI.AuthAsync(token);
+                    await File.WriteAllTextAsync("pixiv.refreshtoken",pixivAPI.RefreshToken);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+                await Task.Delay(1200);
+            }
+        });
         _bot = BotFather.Create(GetConfig(),
             GetDevice(), GetKeyStore());
         {
@@ -35,7 +55,8 @@ public static class Program
 
                     case CaptchaEvent.CaptchaType.Slider:
                         Console.WriteLine(e.SliderUrl);
-                        s.SubmitSliderTicket(Console.ReadLine());
+                        var ticket = Console.ReadLine();
+                        s.SubmitSliderTicket(ticket);
                         break;
 
                     default:
@@ -58,17 +79,14 @@ public static class Program
             if (result) UpdateKeystore(_bot.KeyStore);
         }
 
-        // cli
-        while (true)
-        {
-            switch (Console.ReadLine())
-            {
-                case "/stop":
-                    await _bot.Logout();
-                    _bot.Dispose();
-                    return;
-            }
-        }
+        AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
+        Thread.Sleep(Timeout.Infinite);
+    }
+
+    private static void CurrentDomain_ProcessExit(object? sender, EventArgs e)
+    {
+        _bot.Logout().Wait();
+        _bot.Dispose();
     }
 
     /// <summary>

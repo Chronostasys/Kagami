@@ -7,6 +7,7 @@ using Konata.Core.Message;
 using Konata.Core.Message.Model;
 using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,12 +34,27 @@ public static class Command
 
         var textChain = group.Chain.GetChain<TextChain>();
         if (textChain is null) return;
-
         try
         {
             MessageBuilder? reply = null;
             {
-                if (textChain.Content.StartsWith("/help"))
+                var at = group.Chain.GetChain<AtChain>();
+                if (at is not null)
+                {
+                    if (textChain.Content.Contains("图"))
+                    {
+                        var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
+                        reply = new MessageBuilder();
+                        foreach (var item in rec.Illusts.Take(5))
+                        {
+                            reply.Image(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString()));
+                            reply.Text($"标题：{item.Title}\n");
+                            reply.Text($"画师ID：{item.User.Id}\n");
+                            reply.Text($"图ID：{item.Id}\n\n");
+                        }
+                    }
+                }
+                else if (textChain.Content.StartsWith("/help"))
                     reply = OnCommandHelp(textChain);
                 else if (textChain.Content.StartsWith("/ping"))
                     reply = OnCommandPing(textChain);
@@ -54,6 +70,8 @@ public static class Command
                     reply = await OnCommandMuteMember(bot, group);
                 else if (textChain.Content.StartsWith("/title"))
                     reply = await OnCommandSetTitle(bot, group);
+                else if (textChain.Content.StartsWith("/search"))
+                    reply = await Crawler.DemoSinglePageRequest(textChain);
                 else if (textChain.Content.StartsWith("BV"))
                     reply = await OnCommandBvParser(textChain);
                 else if (textChain.Content.StartsWith("https://github.com/"))
@@ -83,12 +101,23 @@ public static class Command
     /// <param name="chain"></param>
     /// <returns></returns>
     public static MessageBuilder OnCommandHelp(TextChain chain)
-        => new MessageBuilder()
-            .Text("[Kagami Help]\n")
-            .Text("/help\n Print this message\n\n")
+    {
+        var mb = new MessageBuilder()
+            .Text("[帮助]\n")
+            .Text("/help\n 打印帮助\n\n")
             .Text("/ping\n Pong!\n\n")
             .Text("/status\n Show bot status\n\n")
-            .Text("/echo\n Send a message");
+            .Text("/echo\n Send a message\n\n")
+            .Text("/search [-c 0-6] [search text]\n 搜资源\n");
+        mb.Text($"类型对应关系：\n");
+        mb.Text($"\t0：不限制类型(默认为此参数)\n");
+        foreach (var item in Crawler.Cat)
+        {
+            mb.Text($"\t{item.Key}：{item.Value}\n");
+        }
+        mb.Text($"举例，搜索YOASOBI的专辑资源：/search -c 1 YOASOBI\n\n");
+        return mb;
+    }
 
     /// <summary>
     /// On status
@@ -106,7 +135,7 @@ public static class Command
 
             // System status
             .Text($"Processed {_messageCounter} message(s)\n")
-            .Text($"GC Memory {GC.GetTotalAllocatedBytes().Bytes2MiB(2)} MiB " +
+            .Text($"GCed Memory {GC.GetTotalAllocatedBytes().Bytes2MiB(2)} MiB " +
                   $"({Math.Round((double)GC.GetTotalAllocatedBytes() / GC.GetTotalMemory(false) * 100, 2)}%)\n")
             .Text($"Total Memory {Process.GetCurrentProcess().WorkingSet64.Bytes2MiB(2)} MiB\n\n")
 
@@ -150,7 +179,6 @@ public static class Command
         // Get at
         var at = group.Chain.GetChain<AtChain>();
         if (at is null) return Text("Argument error");
-
         // Get group info
         var memberInfo = await bot.GetGroupMemberInfo(group.GroupUin, at.AtUin, true);
         if (memberInfo is null) return Text("No such member");
