@@ -39,10 +39,17 @@ public static class Command
             MessageBuilder? reply = null;
             {
                 var at = group.Chain.GetChain<AtChain>();
-                if (at is not null)
+                if (at is not null&&at.AtUin==bot.Uin)
                 {
-                    if (textChain.Content.Contains("图"))
+                    if (!Program.PixivHealthy)
                     {
+                        reply = new MessageBuilder();
+                        reply.Text("Pixiv API is not healthy, please contanct admin.");
+
+                    }
+                    else if (textChain.Content.Contains("图"))
+                    {
+
                         var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
                         reply = new MessageBuilder();
                         foreach (var item in rec.Illusts.Take(5))
@@ -52,6 +59,14 @@ public static class Command
                             reply.Text($"画师ID：{item.User.Id}\n");
                             reply.Text($"图ID：{item.Id}\n\n");
                         }
+                        
+                    }
+                    else if (textChain.Content.Contains("收藏"))
+                    {
+                        reply = new MessageBuilder();
+                        var id = textChain.Content.Split("收藏")[1].Trim();
+                        await Program.pixivAPI.PostIllustBookmarkAddAsync(id);
+                        reply.Text("已收藏");
                     }
                 }
                 else if (textChain.Content.StartsWith("/help"))

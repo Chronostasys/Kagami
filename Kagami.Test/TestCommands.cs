@@ -5,6 +5,7 @@ using NUnit.Framework;
 using PixivCS;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kagami.Test;
@@ -94,8 +95,9 @@ public class Tests
         await c.AuthAsync("1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w");
         await File.WriteAllTextAsync("refreshtoken",c.RefreshToken);
         var rec = await c.GetIllustRecommendedAsync();
-
-        await c.DownloadAsync(rec.Illusts[0].ImageUrls.Large.ToString(),"1.jpg");
+        //var rec = await c.GetIllustRankingAsync();
+        var img = rec.Illusts.First();
+        await c.DownloadAsync(img.ImageUrls.Large.ToString(),"1.jpg");
 
         Assert.Pass();
     }

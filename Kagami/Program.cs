@@ -17,6 +17,8 @@ public static class Program
     private static Bot _bot = null!;
     internal static PixivCS.PixivAppAPI pixivAPI = new();
 
+    internal static bool PixivHealthy = true;
+
     public static async Task Main()
     {
         var token = await File.ReadAllTextAsync("pixiv.refreshtoken");
@@ -32,6 +34,7 @@ public static class Program
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
+                    PixivHealthy = false;
                     throw;
                 }
                 await Task.Delay(1200);
