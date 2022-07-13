@@ -52,12 +52,21 @@ public static class Command
 
                         var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
                         reply = new MessageBuilder();
-                        foreach (var item in rec.Illusts.Take(5))
+                        if (!rec.Illusts.Any())
                         {
-                            reply.Image(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString()));
-                            reply.Text($"标题：{item.Title}\n");
-                            reply.Text($"画师ID：{item.User.Id}\n");
-                            reply.Text($"图ID：{item.Id}\n\n");
+                            reply.Text("No illusts found.");
+                        }
+                        else
+                        {
+                            foreach (var item in rec.Illusts.Take(5))
+                            {
+                                reply.Image(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString()));
+                                reply.Text($"标题：{item.Title}\n");
+                                reply.Text($"画师ID：{item.User.Id}\n");
+                                reply.Text($"图ID：{item.Id}");
+                                bot.SendGroupMessage(group.GroupUin, reply);
+                                reply = new MessageBuilder();
+                            }
                         }
                         
                     }
