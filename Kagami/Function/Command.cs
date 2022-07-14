@@ -7,6 +7,7 @@ using Konata.Core.Message;
 using Konata.Core.Message.Model;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,11 +42,28 @@ public static class Command
                 var at = group.Chain.GetChain<AtChain>();
                 if (at is not null&&at.AtUin==bot.Uin)
                 {
+
+                    if (!Program.PixivHealthy)
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            try
+                            {
+                                await Program.pixivAPI.AuthAsync(await File.ReadAllTextAsync("pixiv.refreshtoken"));
+                                Program.PixivHealthy = true;
+                                break;
+                            }
+                            catch (System.Exception)
+                            {
+                            }
+                        }
+                    }
+
                     if (!Program.PixivHealthy)
                     {
                         reply = new MessageBuilder();
+                        
                         reply.Text("Pixiv API is not healthy, please contanct admin.");
-
                     }
                     else if (textChain.Content.Contains("图"))
                     {
