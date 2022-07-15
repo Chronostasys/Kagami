@@ -76,15 +76,15 @@ public static class Command
                         }
                         else
                         {
+                            var ch = new MultiMsgChain();
                             foreach (var item in rec.Illusts.Take(5))
                             {
-                                reply.Image(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString()));
-                                reply.Text($"标题：{item.Title}\n");
-                                reply.Text($"画师ID：{item.User.Id}\n");
-                                reply.Text($"图ID：{item.Id}");
-                                bot.SendGroupMessage(group.GroupUin, reply);
-                                reply = new MessageBuilder();
+                                ch.AddMessage(bot.Uin,"寄",ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString())));
+                                ch.AddMessage(bot.Uin,"寄",TextChain.Create( $"标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
+                                
                             }
+                            
+                            reply.Add(ch);
                         }
                         
                     }
