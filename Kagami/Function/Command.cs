@@ -65,6 +65,16 @@ public static class Command
                         
                         reply.Text("Pixiv API is not healthy, please contanct admin.");
                     }
+                    else if (textChain.Content.Contains("原图"))
+                    {
+                        reply = new MessageBuilder();
+                        var id = textChain.Content.Split("原图")[1].Trim();
+                        var detail = await Program.pixivAPI.GetIllustDetailAsync(id);
+                        var url = detail.Illust.ImageUrls.Large.ToString();
+                        var ch = new MultiMsgChain();
+                        ch.AddMessage(bot.Uin,"寄",ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(url)));
+                        reply.Add(ch);
+                    }
                     else if (textChain.Content.Contains("图"))
                     {
 
@@ -79,11 +89,10 @@ public static class Command
                             var ch = new MultiMsgChain();
                             foreach (var item in rec.Illusts.Take(5))
                             {
-                                ch.AddMessage(bot.Uin,"寄",ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString())));
+                                ch.AddMessage(bot.Uin,"寄",ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Medium.ToString())));
                                 ch.AddMessage(bot.Uin,"寄",TextChain.Create( $"标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
                                 
                             }
-                            
                             reply.Add(ch);
                         }
                         
