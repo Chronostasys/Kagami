@@ -133,7 +133,25 @@ public static class Command
 
             // Send reply message
             if (reply is not null)
-                await bot.SendGroupMessage(group.GroupUin, reply);
+            {
+                var succ = false;
+                for (int i = 0; i < 5; i++)
+                {
+                    var re = await bot.SendGroupMessage(group.GroupUin, reply);
+                    if (re)
+                    {
+                        succ = true;
+                        break;
+                    }
+                }
+                if (!succ)
+                {
+                    reply = new();
+                    reply.Text("Failed to send message.");
+                    await bot.SendGroupMessage(group.GroupUin, reply);
+                }
+
+            }
         }
         catch (Exception e)
         {
