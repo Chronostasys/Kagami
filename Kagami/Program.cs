@@ -44,7 +44,7 @@ public static class Program
             GetDevice(), GetKeyStore());
         {
             // Print the log
-            _bot.OnLog += (_, e) => Console.WriteLine(e.EventMessage);
+            _bot.OnLog += (_, e) => Console.WriteLine($"{e.Level} {e.EventMessage}");
 
             // Handle the captcha
             _bot.OnCaptcha += (s, e) =>
@@ -85,6 +85,7 @@ public static class Program
         AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
         Thread.Sleep(Timeout.Infinite);
     }
+
 
     private static void CurrentDomain_ProcessExit(object? sender, EventArgs e)
     {

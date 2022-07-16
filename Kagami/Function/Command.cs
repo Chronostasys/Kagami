@@ -6,6 +6,7 @@ using Konata.Core.Interfaces.Api;
 using Konata.Core.Message;
 using Konata.Core.Message.Model;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -87,12 +88,31 @@ public static class Command
                         else
                         {
                             var ch = new MultiMsgChain();
+
+                            var tsks = new List<Task>();
                             foreach (var item in rec.Illusts.Take(5))
                             {
-                                ch.AddMessage(bot.Uin,"寄",ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Medium.ToString())));
-                                ch.AddMessage(bot.Uin,"寄",TextChain.Create( $"标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
-                                
+                                async Task download()
+                                {
+                                    var re = new MessageBuilder();
+                                    var bs = await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString());
+                                    re.Add(ImageChain.Create(bs));
+                                    re.Add(TextChain.Create($"\n标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
+                                    var succ = await bot.SendFriendMessage(2293738051, re);
+                                    if (succ)
+                                    {
+                                        ch.Add(new MessageStruct(bot.Uin, "寄", re.Build()));
+                                    }
+                                    else
+                                    {
+                                        ch.AddMessage(bot.Uin, "寄", TextChain.Create($"此图无法上传\n标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
+                                    }
+                                }
+                                tsks.Add(download());
+
                             }
+                            await Task.WhenAll(tsks);
+                            
                             reply.Add(ch);
                         }
                         
