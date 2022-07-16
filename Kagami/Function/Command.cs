@@ -10,8 +10,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -21,7 +25,7 @@ namespace Kagami.Function;
 public static class Command
 {
     private static uint _messageCounter;
-
+    private static HttpClient _client = new();
     /// <summary>
     /// On group message
     /// </summary>
@@ -41,7 +45,7 @@ public static class Command
             MessageBuilder? reply = null;
             {
                 var at = group.Chain.GetChain<AtChain>();
-                if (at is not null&&at.AtUin==bot.Uin)
+                if (at is not null && at.AtUin == bot.Uin)
                 {
 
                     if (!Program.PixivHealthy)
@@ -63,7 +67,7 @@ public static class Command
                     if (!Program.PixivHealthy)
                     {
                         reply = new MessageBuilder();
-                        
+
                         reply.Text("Pixiv API is not healthy, please contanct admin.");
                     }
                     else if (textChain.Content.Contains("原图"))
@@ -73,7 +77,7 @@ public static class Command
                         var detail = await Program.pixivAPI.GetIllustDetailAsync(id);
                         var url = detail.Illust.ImageUrls.Large.ToString();
                         var ch = new MultiMsgChain();
-                        ch.AddMessage(bot.Uin,"寄",ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(url)));
+                        ch.AddMessage(bot.Uin, "寄", ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(url)));
                         reply.Add(ch);
                     }
                     else if (textChain.Content.Contains("图"))
@@ -112,10 +116,10 @@ public static class Command
 
                             }
                             await Task.WhenAll(tsks);
-                            
+
                             reply.Add(ch);
                         }
-                        
+
                     }
                     else if (textChain.Content.Contains("收藏"))
                     {
@@ -127,6 +131,10 @@ public static class Command
                 }
                 else if (textChain.Content.StartsWith("/help"))
                     reply = OnCommandHelp(textChain);
+                if (textChain.Content.Contains("来首"))
+                    reply = await OnKuwoAsync(textChain);
+                else if (textChain.Content.StartsWith("小溜一首"))
+                    reply = await OnZood();
                 else if (textChain.Content.StartsWith("/ping"))
                     reply = OnCommandPing(textChain);
                 else if (textChain.Content.StartsWith("/status"))
@@ -184,6 +192,48 @@ public static class Command
         }
     }
 
+    public static async Task<MessageBuilder> OnZood()
+    {
+        var mb = new MessageBuilder();
+
+        var re = await Mp3ToRecChainAsync("https://lb-sycdn.kuwo.cn/8cf96adac93685f4b0cb05dcb60b692f/62d2afa7/resource/n1/86/45/3917959763.mp3");
+        mb.Add(re);
+        return mb;
+    }
+
+    public static async Task<MessageBuilder> OnKuwoAsync(TextChain chain)
+    {
+        var mb = new MessageBuilder();
+        var id = chain.Content.Split("来首")[1].Trim();
+        var restr = await _client.GetStringAsync($"https://search.kuwo.cn/r.s?all={id}&ft=music&%20itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8");
+        var nstr = restr.Replace('\'', '"').Trim();
+        Console.WriteLine(nstr);
+        var re = JsonSerializer.Deserialize<KuwoSearchDto>(nstr);
+        if (re.abslist.Length==0)
+        {
+            mb.Text("找不到对应的歌");
+            return mb;
+        }
+        var mp3url = await _client.GetStringAsync($"https://antiserver.kuwo.cn/anti.s?type=convert_url&rid={re.abslist[0].MUSICRID}&format=mp3&response=url");
+        mb.Add(await Mp3ToRecChainAsync(mp3url));
+        return mb;
+    }
+    public static async Task<RecordChain> Mp3ToRecChainAsync(string mp3url)
+    {
+        var id = Guid.NewGuid();
+        var mp3stream = await _client.GetStreamAsync(mp3url);
+        var fs = File.Open($"/root/{id}.mp3", FileMode.Create);
+        await mp3stream.CopyToAsync(fs);
+        await mp3stream.DisposeAsync();
+        await fs.DisposeAsync();
+        await Process.Start("/snap/bin/ffmpeg", $"-y  -i /root/{id}.mp3  -acodec pcm_s16le -f s16le -ac 1 -ar 24000 /root/{id}.pcm").WaitForExitAsync();
+        await Process.Start("/root/silk-v3-decoder/silk/encoder", $"/root/{id}.pcm /root/{id}.silk").WaitForExitAsync();
+        var re = RecordChain.Create(await File.ReadAllBytesAsync($"/root/{id}.silk"));
+        File.Delete($"{id}.mp3");
+        File.Delete($"{id}.pcm");
+        File.Delete($"{id}.silk");
+        return re;
+    }
     /// <summary>
     /// On help
     /// </summary>

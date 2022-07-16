@@ -6,6 +6,8 @@ using PixivCS;
 using System;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Kagami.Test;
@@ -84,7 +86,10 @@ public class Tests
     [Test]
     public async Task OnCrawl()
     {
-        var c = new Crawler();
+        var restr = await new HttpClient().GetStringAsync($"https://search.kuwo.cn/r.s?all=zood&ft=music&%20itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8");
+        var nstr = restr.Replace('\'', '"').Trim();
+        Console.WriteLine(nstr);
+        var re = JsonSerializer.Deserialize<KuwoSearchDto>(nstr);
 
         Assert.Pass();
     }
