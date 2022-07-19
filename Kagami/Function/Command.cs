@@ -75,7 +75,7 @@ public static class Command
                         reply = new MessageBuilder();
                         var id = textChain.Content.Split("原图")[1].Trim();
                         var detail = await Program.pixivAPI.GetIllustDetailAsync(id);
-                        var url = detail.Illust.ImageUrls.Large.ToString();
+                        var url = detail.Illust.MetaSinglePage.OriginalImageUrl.ToString();
                         var ch = new MultiMsgChain();
                         ch.AddMessage(bot.Uin, "寄", ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(url)));
                         reply.Add(ch);

@@ -102,7 +102,10 @@ public class Tests
         var rec = await c.GetIllustRecommendedAsync();
         //var rec = await c.GetIllustRankingAsync();
         var img = rec.Illusts.First();
-        await c.DownloadAsync(img.ImageUrls.Large.ToString(),"1.jpg");
+        var re = await c.GetIllustDetailAsync(img.Id.ToString());
+        
+        await c.DownloadAsync(re.Illust.ImageUrls.Large.ToString(),"1.jpg");
+        await c.DownloadAsync(re.Illust.MetaSinglePage.OriginalImageUrl.ToString(),"2.jpg");
 
         Assert.Pass();
     }
