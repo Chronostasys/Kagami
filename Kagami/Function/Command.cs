@@ -243,7 +243,13 @@ public static class Command
     {
         var mb = new MessageBuilder()
             .Text("[帮助]\n")
+            .Text("[at机器人] xxx图xxx\n 获取五张推荐图\n\n")
+            .Text("[at机器人] 原图[id]\n 获取原图\n\n")
+            .Text("[at机器人] 收藏[id]\n 收藏图\n\n")
+            .Text("来首[歌]\n 放歌（语音形式）\n\n")
             .Text("/help\n 打印帮助\n\n")
+            .Text("/member [at成员]\n 打印该成员信息\n\n")
+            .Text("/mute [时间（秒）] [at成员]\n 禁言成员，默认60秒\n\n")
             .Text("/ping\n Pong!\n\n")
             .Text("/status\n Show bot status\n\n")
             .Text("/echo\n Send a message\n\n")
@@ -266,17 +272,20 @@ public static class Command
     public static MessageBuilder OnCommandStatus(TextChain chain)
         => new MessageBuilder()
             // Core descriptions
-            .Text($"[Kagami]\n")
+            .Text($"[Kagami]\n源码地址https://github.com/Chronostasys/Kagami\n")
+            .Text($"[Konata.Core内核信息=======================]\n")
             .Text($"[branch:{BuildStamp.Branch}]\n")
             .Text($"[commit:{BuildStamp.CommitHash[..12]}]\n")
             .Text($"[version:{BuildStamp.Version}]\n")
             .Text($"[{BuildStamp.BuildTime}]\n\n")
 
             // System status
+            .Text($"[===========系统信息=======================]\n")
             .Text($"Processed {_messageCounter} message(s)\n")
-            .Text($"GCed Memory {GC.GetTotalAllocatedBytes().Bytes2MiB(2)} MiB " +
-                  $"({Math.Round((double)GC.GetTotalAllocatedBytes() / GC.GetTotalMemory(false) * 100, 2)}%)\n")
+            .Text($"GC Allocated Memory {GC.GetTotalAllocatedBytes().Bytes2MiB(2)} MiB\n")
             .Text($"Total Memory {Process.GetCurrentProcess().WorkingSet64.Bytes2MiB(2)} MiB\n\n")
+
+            .Text($"Is Pixiv Service Healthy: {Program.PixivHealthy} \n\n")
 
             // Copyrights
             .Text("Konata Project (C) 2022");

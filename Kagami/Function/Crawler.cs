@@ -20,15 +20,6 @@ namespace Kagami.Function
     {
         static Regex regex = new(@"^magnet:\?xt=urn:btih:[0-9a-fA-F]{40,}.*$");
         static HttpClient client = new HttpClient();
-        async Task Do()
-        {
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Information()
-                .WriteTo.Console()
-                .CreateLogger();
-
-            Log.Logger.Information("Demo starting up!");
-        }
 
         public async Task DemoSimpleCrawler()
         {
