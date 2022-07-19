@@ -415,7 +415,8 @@ public static class Command
 
         // Get meta data
         var metaData = html.GetMetaData("itemprop");
-        var titleMeta = metaData["description"];
+        var titleMeta = metaData["name"];
+        var descMeta = metaData["description"];
         var imageMeta = metaData["image"];
         var keyWdMeta = metaData["keywords"];
 
@@ -427,6 +428,7 @@ public static class Command
         {
             result.Text($"{titleMeta}\n");
             result.Text($"https://www.bilibili.com/video/{avCode}\n\n");
+            result.Text($"{descMeta}\n");
             result.Image(image);
             result.Text("\n#" + string.Join(" #", keyWdMeta.Split(",")[1..^4]));
         }
