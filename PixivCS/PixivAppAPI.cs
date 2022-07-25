@@ -431,9 +431,9 @@ namespace PixivCS
             var res = await RequestCall("GET", url, headers, Query: query, RequireAuth: false);
             return Objects.ShowcaseArticle.FromJson(await GetResponseString(res));
         }
-        static Dictionary<string, string> refdic = new Dictionary<string, string>() { { "Referer", "https://app-api.pixiv.net/" } };
         public async Task DownloadAsync(string url,string filePath)
         {
+            var refdic = new Dictionary<string, string>() { { "Referer", "https://app-api.pixiv.net/" } };
             var re = await RequestCall("GET", url, refdic);
             var file = await re.Content.ReadAsStreamAsync();
             var f = File.Open(filePath, FileMode.Create);
@@ -443,6 +443,7 @@ namespace PixivCS
         }
         public async Task<byte[]> DownloadBytesAsync(string url)
         {
+            var refdic = new Dictionary<string, string>() { { "Referer", "https://app-api.pixiv.net/" } };
             var re = await RequestCall("GET", url, refdic);
             return await re.Content.ReadAsByteArrayAsync();
         }
