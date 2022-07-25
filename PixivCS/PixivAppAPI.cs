@@ -106,7 +106,8 @@ namespace PixivCS
                 ("illust_id", IllustID)
             };
             var res = await RequestCall("GET", url, Query: query, RequireAuth: RequireAuth);
-            return Objects.IllustDetail.FromJson(await GetResponseString(res));
+            var str = await GetResponseString(res);
+            return Objects.IllustDetail.FromJson(str);
         }
 
         //作品评论

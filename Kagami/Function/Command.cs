@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json;
+using PixivCS.Objects;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -47,6 +48,41 @@ public static class Command
                 var at = group.Chain.GetChain<AtChain>();
                 if (at is not null && at.AtUin == bot.Uin)
                 {
+
+                    async Task IllustAsync(UserPreviewIllust[] illusts)
+                    {
+                        reply = new MessageBuilder();
+                        if (!illusts.Any())
+                        {
+                            reply.Text("No illusts found.");
+                        }
+                        else
+                        {
+                            var ch = new MultiMsgChain();
+
+                            var tsks = new List<Task>();
+                            foreach (var item in illusts.Take(5))
+                            {
+                                async Task download()
+                                {
+                                    var re = new MessageBuilder();
+                                    var bs = await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString());
+                                    re.Add(ImageChain.Create(bs));
+                                    re.Add(TextChain.Create($"\n标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
+                                    lock (bot)
+                                    {
+                                        ch.AddMessage(bot.Uin, "寄",re.Build());
+                                    }
+                                }
+                                tsks.Add(download());
+
+                            }
+                            await Task.WhenAll(tsks);
+
+                            reply.Add(ch);
+                        }
+                    }
+
 
                     if (!Program.PixivHealthy)
                     {
@@ -92,45 +128,25 @@ public static class Command
                             reply.Add(ch);
                         }
                     }
+                    else if (textChain.Content.Contains("搜索"))
+                    {
+                        var id = textChain.Content.Split("搜索")[1].Trim();
+                        var rec = await Program.pixivAPI.GetSearchIllustAsync(id);
+                        await IllustAsync(rec.Illusts);
+
+                    }
+                    else if (textChain.Content.Contains("日排行"))
+                    {
+
+                        var rec = await Program.pixivAPI.GetIllustRankingAsync("day_male");
+                        await IllustAsync(rec.Illusts);
+
+                    }
                     else if (textChain.Content.Contains("图"))
                     {
 
                         var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
-                        reply = new MessageBuilder();
-                        if (!rec.Illusts.Any())
-                        {
-                            reply.Text("No illusts found.");
-                        }
-                        else
-                        {
-                            var ch = new MultiMsgChain();
-
-                            var tsks = new List<Task>();
-                            foreach (var item in rec.Illusts.Take(5))
-                            {
-                                async Task download()
-                                {
-                                    var re = new MessageBuilder();
-                                    var bs = await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString());
-                                    re.Add(ImageChain.Create(bs));
-                                    re.Add(TextChain.Create($"\n标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
-                                    var succ = await bot.SendFriendMessage(2293738051, re);
-                                    if (succ)
-                                    {
-                                        ch.Add(new MessageStruct(bot.Uin, "寄", re.Build()));
-                                    }
-                                    else
-                                    {
-                                        ch.AddMessage(bot.Uin, "寄", TextChain.Create($"此图无法上传\n标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
-                                    }
-                                }
-                                tsks.Add(download());
-
-                            }
-                            await Task.WhenAll(tsks);
-
-                            reply.Add(ch);
-                        }
+                        await IllustAsync(rec.Illusts);
 
                     }
                     else if (textChain.Content.Contains("收藏"))

@@ -99,12 +99,12 @@ public class Tests
         var c = new PixivAppAPI();
         await c.AuthAsync("1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w");
         await File.WriteAllTextAsync("refreshtoken",c.RefreshToken);
-        var rec = await c.GetIllustRecommendedAsync();
-        //var rec = await c.GetIllustRankingAsync();
-        var img = rec.Illusts.First();
-        var re = await c.GetIllustDetailAsync("99358839");
-        
-        await c.DownloadAsync(re.Illust.ImageUrls.Large.ToString(),"1.jpg");
+        // var rec = await c.GetIllustRecommendedAsync();
+        var rec = await c.GetIllustRankingAsync();
+        // var img = rec.Illusts.First();
+        var re = await c.GetIllustDetailAsync("88340806");
+        var ug = await c.GetUgoiraMetadataAsync("88340806");
+        await c.DownloadAsync(ug.UgoiraMetadataUgoiraMetadata.ZipUrls.Medium.ToString(),"1.zip");
         await c.DownloadAsync(re.Illust.MetaSinglePage.OriginalImageUrl.ToString(),"2.jpg");
 
         Assert.Pass();
