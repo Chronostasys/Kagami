@@ -39,7 +39,8 @@ public static class Command
         {942065241,true},
         {158441764,true},
         {1054725794,true},
-        { 658322302, true }
+        { 658322302, true },
+        { 688301255, true }
     };
 
     internal static async void OnGroupPromoteAdmin(Bot bot, GroupPromoteAdminEvent pe)
