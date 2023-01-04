@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -46,20 +48,27 @@ namespace Kagami.Function
                 text = text[4..].Trim();
             }
             var re = await client.GetFromJsonAsync<IEnumerable<JSONInfo>>($"https://apibay.org/q.php?q={text}&cat={cat}");
-            re = re.Take(10);
-            // Build message
             var result = new MessageBuilder();
-            foreach (var item in re)
-            {
-                result.Text("资源名："+item.Name+"\n");
-                result.Text($"magnet:?xt=urn:btih:{item.Info_Hash}\n");
-                result.Text($"类型：{Cat[item.Category[0]]}\n");
-                result.Text($"大小：{SizeSuffix(item.Size)}\n\n");
-            }
-            if (!re.Any())
+            if (re==null || !re.Any())
             {
                 result.Text("无对应资源。提示：只支持搜索纯英文");
+                return result;
             }
+            re = re.Take(10);
+            // Build message
+            var i = 0;
+            foreach (var item in re)
+            {
+                Console.WriteLine(item.Name);
+                i++;
+                // result.Text("名："+item.Name+"\n");
+                var link = $"magnet:?xt=urn:btih:{item.Info_Hash}";
+                result.Text($"BASE64: {Convert.ToBase64String(Encoding.UTF8.GetBytes(link))}\n");
+                // result.Text($"类：{Cat[item.Category[0]]}\n");
+                // result.Text($"大小：{SizeSuffix(item.Size)}\n\n");
+            }
+            Console.WriteLine("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
+            Console.WriteLine(i);
             return result;
 
         }

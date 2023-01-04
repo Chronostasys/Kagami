@@ -16,6 +16,6 @@ public static class Poke
         if (group.MemberUin != bot.Uin) return;
 
         // Convert it to ping
-        bot.SendGroupMessage(group.GroupUin, Command.OnCommandPing(null));
+        bot.SendGroupMessage(group.GroupUin, new Konata.Core.Message.MessageBuilder().Text("别戳辣"));
     }
 }

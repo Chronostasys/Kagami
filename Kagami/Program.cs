@@ -4,6 +4,7 @@ using Konata.Core.Common;
 using Konata.Core.Events.Model;
 using Konata.Core.Interfaces;
 using Konata.Core.Interfaces.Api;
+using Konata.Core.Message;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -22,7 +23,7 @@ public static class Program
     public static async Task Main()
     {
         var token = await File.ReadAllTextAsync("pixiv.refreshtoken");
-        Task.Run(async () =>
+        _ = Task.Run(async () =>
         {
             while (true)
             {
@@ -35,7 +36,6 @@ public static class Program
                 {
                     Console.WriteLine(e);
                     PixivHealthy = false;
-                    throw;
                 }
                 await Task.Delay(1200);
             }
@@ -73,6 +73,18 @@ public static class Program
 
             // Handle messages from group
             _bot.OnGroupMessage += Command.OnGroupMessage;
+            _bot.OnGroupPromoteAdmin += Command.OnGroupPromoteAdmin;
+            _bot.OnGroupMemberIncrease += async (s, e) => 
+            {
+                await s.GetGroupMemberList(e.GroupUin,true);
+                var msg = new MessageBuilder();
+                msg.At(e.MemberUin);
+                msg.Text("欢迎来到理塘！");
+                await s.SendGroupPoke(e.GroupUin, e.MemberUin);
+                await s.SendGroupMessage(e.GroupUin, msg);
+                //await s.SendGroupMessage(e.GroupUin, await Command.GetMp3RecordAsync("zood"));
+            };
+            _bot.OnGroupMemberDecrease += async (s, e) => await s.GetGroupMemberList(e.GroupUin,true);
         }
 
         // Login the bot

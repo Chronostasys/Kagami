@@ -7,6 +7,7 @@ using Konata.Core.Message;
 using Konata.Core.Message.Model;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -17,6 +18,9 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using PixivCS.Objects;
+using Konata.Codec;
+using Konata.Codec.Audio;
+using Konata.Codec.Audio.Codecs;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -27,6 +31,22 @@ public static class Command
 {
     private static uint _messageCounter;
     private static HttpClient _client = new();
+    private static readonly uint spuin = 435230136;
+
+    private static Dictionary<uint, bool> whiteList = new()
+    {
+        {151887325,true},
+        {942065241,true},
+        {158441764,true},
+        {1054725794,true},
+        { 658322302, true }
+    };
+
+    internal static async void OnGroupPromoteAdmin(Bot bot, GroupPromoteAdminEvent pe)
+    {
+        await bot.GetGroupMemberList(pe.GroupUin,true);
+        return;
+    }
     /// <summary>
     /// On group message
     /// </summary>
@@ -40,7 +60,20 @@ public static class Command
         if (group.MemberUin == bot.Uin) return;
 
         var textChain = group.Chain.GetChain<TextChain>();
-        if (textChain is null) return;
+        var imgchain = group.Chain.GetChain<ImageChain>();
+        var mul = group.Chain.GetChain<MultiMsgChain>();
+
+
+        if (textChain is null)
+        {
+            if ((imgchain is not null||mul is not null)&&Util.CanIDo(0.005))
+            {
+                var reply = new MessageBuilder();
+                reply.Text("我回民看不得这个");
+                await bot.SendGroupMessage(group.GroupUin, reply);
+            }
+            return;
+        }
         try
         {
             MessageBuilder? reply = null;
@@ -61,17 +94,27 @@ public static class Command
                             var ch = new MultiMsgChain();
 
                             var tsks = new List<Task>();
+
+                            if (!whiteList.ContainsKey(group.GroupUin))
+                            {
+                                illusts = illusts.SkipWhile(x => x.Tags.Select(t => t.Name).Contains("R-18") || x.Tags.Select(t => t.Name).Contains("R-18G")).ToArray();
+                            }
                             foreach (var item in illusts.Take(5))
                             {
                                 async Task download()
                                 {
                                     var re = new MessageBuilder();
                                     var bs = await Program.pixivAPI.DownloadBytesAsync(item.ImageUrls.Large.ToString());
-                                    re.Add(ImageChain.Create(bs));
+                                    var ich = ImageChain.Create(bs);
+                                    if (ich is null)
+                                    {
+                                        return;
+                                    }
+                                    re.Add(ich);
                                     re.Add(TextChain.Create($"\n标题：{item.Title}\n画师ID：{item.User.Id}\n图ID：{item.Id}"));
                                     lock (bot)
                                     {
-                                        ch.AddMessage(bot.Uin, "寄",re.Build());
+                                        ch.AddMessage(bot.Uin, "寄", re.Build());
                                     }
                                 }
                                 tsks.Add(download());
@@ -84,19 +127,18 @@ public static class Command
                     }
 
 
-                    if (!Program.PixivHealthy)
+                    for (int i = 0; i < 3; i++)
                     {
-                        for (int i = 0; i < 3; i++)
+                        try
                         {
-                            try
-                            {
-                                await Program.pixivAPI.AuthAsync(await File.ReadAllTextAsync("pixiv.refreshtoken"));
-                                Program.PixivHealthy = true;
-                                break;
-                            }
-                            catch (System.Exception)
-                            {
-                            }
+
+                            await Program.pixivAPI.AuthAsync(await File.ReadAllTextAsync("pixiv.refreshtoken"));
+                            Program.PixivHealthy = true;
+                            break;
+                        }
+                        catch (System.Exception)
+                        {
+                            Program.PixivHealthy = false;
                         }
                     }
 
@@ -142,11 +184,32 @@ public static class Command
                         await IllustAsync(rec.Illusts);
 
                     }
+                    else if (textChain.Content.Contains("色图"))
+                    {
+                        if (whiteList.ContainsKey(group.GroupUin))
+                        {
+                            var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
+                            await IllustAsync(rec.Illusts.Where(x => x.Tags.Select(t => t.Name).Contains("R-18") || x.Tags.Select(t => t.Name).Contains("R-18G")).ToArray());
+                        }
+                        else
+                        {
+                            reply = new MessageBuilder();
+                            reply.Text("h是不行的！");
+                        }
+
+                    }
                     else if (textChain.Content.Contains("图"))
                     {
-
-                        var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
-                        await IllustAsync(rec.Illusts);
+                        if (whiteList.ContainsKey(group.GroupUin))
+                        {
+                            var rec = await Program.pixivAPI.GetIllustRecommendedAsync();
+                            await IllustAsync(rec.Illusts);
+                        }
+                        else
+                        {
+                            reply = new MessageBuilder();
+                            reply.Text("h是不行的！");
+                        }
 
                     }
                     else if (textChain.Content.Contains("收藏"))
@@ -161,8 +224,6 @@ public static class Command
                     reply = OnCommandHelp(textChain);
                 if (textChain.Content.Contains("来首"))
                     reply = await OnKuwoAsync(textChain);
-                else if (textChain.Content.StartsWith("小溜一首"))
-                    reply = await OnZood();
                 else if (textChain.Content.StartsWith("/ping"))
                     reply = OnCommandPing(textChain);
                 else if (textChain.Content.StartsWith("/status"))
@@ -178,7 +239,17 @@ public static class Command
                 else if (textChain.Content.StartsWith("/title"))
                     reply = await OnCommandSetTitle(bot, group);
                 else if (textChain.Content.StartsWith("/search"))
-                    reply = await Crawler.DemoSinglePageRequest(textChain);
+                {
+                    if (!whiteList.ContainsKey(group.GroupUin))
+                    {
+                        reply = new MessageBuilder();
+                        reply.Text("小朋友不许查");
+                    }
+                    else
+                    {
+                        reply = await Crawler.DemoSinglePageRequest(textChain);
+                    }
+                }
                 else if (textChain.Content.StartsWith("BV"))
                     reply = await OnCommandBvParser(textChain);
                 else if (textChain.Content.StartsWith("https://github.com/"))
@@ -231,13 +302,18 @@ public static class Command
 
     public static async Task<MessageBuilder> OnKuwoAsync(TextChain chain)
     {
-        var mb = new MessageBuilder();
         var id = chain.Content.Split("来首")[1].Trim();
+        return await GetMp3RecordAsync(id);
+    }
+
+    public static async Task<MessageBuilder> GetMp3RecordAsync(string id)
+    {
+        var mb = new MessageBuilder();
         var restr = await _client.GetStringAsync($"https://search.kuwo.cn/r.s?all={id}&ft=music&%20itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8");
         var nstr = restr.Replace('\'', '"').Trim();
         Console.WriteLine(nstr);
-        var re = JsonSerializer.Deserialize<KuwoSearchDto>(nstr);
-        if (re.abslist.Length==0)
+        var re = JsonSerializer.Deserialize<KuwoSearchDto>(nstr)!;
+        if (re.abslist.Length == 0)
         {
             mb.Text("找不到对应的歌");
             return mb;
@@ -249,17 +325,26 @@ public static class Command
     public static async Task<RecordChain> Mp3ToRecChainAsync(string mp3url)
     {
         var id = Guid.NewGuid();
-        var mp3stream = await _client.GetStreamAsync(mp3url);
-        var fs = File.Open($"/root/{id}.mp3", FileMode.Create);
-        await mp3stream.CopyToAsync(fs);
-        await mp3stream.DisposeAsync();
-        await fs.DisposeAsync();
-        await Process.Start("/snap/bin/ffmpeg", $"-y  -i /root/{id}.mp3  -acodec pcm_s16le -f s16le -ac 1 -ar 24000 /root/{id}.pcm").WaitForExitAsync();
-        await Process.Start("/root/silk-v3-decoder/silk/encoder", $"/root/{id}.pcm /root/{id}.silk").WaitForExitAsync();
-        var re = RecordChain.Create(await File.ReadAllBytesAsync($"/root/{id}.silk"));
-        File.Delete($"{id}.mp3");
-        File.Delete($"{id}.pcm");
-        File.Delete($"{id}.silk");
+        using var mp3stream = await _client.GetStreamAsync(mp3url);
+        var slkstream = new MemoryStream();
+        
+        // Create audio pipeline
+        using var mp3pipeline = new AudioPipeline
+        {
+            // Mp3 decoder stream
+            new  Mp3Codec.Decoder(mp3stream),
+            new AudioResampler(new AudioInfo(AudioFormat.Signed16Bit, AudioChannel.Mono, 24000)),
+            new SilkV3Codec.Encoder(),
+            slkstream
+        };
+        var succ = await mp3pipeline.Start();
+        if (!succ)
+        {
+            throw new Exception("slk encode failed");
+        }
+        Console.WriteLine($"slkstream length: {slkstream.Length}");
+        slkstream.Position = 0;
+        var re = RecordChain.Create(slkstream.GetBuffer()[..(int)slkstream.Length]);
         return re;
     }
     /// <summary>
@@ -277,7 +362,7 @@ public static class Command
             .Text("来首[歌]\n 放歌（语音形式）\n\n")
             .Text("/help\n 打印帮助\n\n")
             .Text("/member [at成员]\n 打印该成员信息\n\n")
-            .Text("/mute [时间（秒）] [at成员]\n 禁言成员，默认60秒\n\n")
+            .Text("/mute [at成员] [时间（秒）]\n 禁言成员，默认60秒\n\n")
             .Text("/ping\n Pong!\n\n")
             .Text("/status\n Show bot status\n\n")
             .Text("/echo\n Send a message\n\n")
@@ -286,6 +371,10 @@ public static class Command
         mb.Text($"\t0：不限制类型(默认为此参数)\n");
         foreach (var item in Crawler.Cat)
         {
+            if (item.Key == 5)
+            {
+                continue;
+            }
             mb.Text($"\t{item.Key}：{item.Value}\n");
         }
         mb.Text($"举例，搜索YOASOBI的专辑资源：/search -c 1 YOASOBI\n\n");
@@ -391,7 +480,10 @@ public static class Command
                 time = t;
             }
         }
-
+        if (atChain.AtUin == 1769712655)
+        {
+            return Text("不允许禁言开发者");
+        }
         try
         {
             if (await bot.GroupMuteMember(group.GroupUin, atChain.AtUin, time))
@@ -482,7 +574,7 @@ public static class Command
         // UrlDownload the page
         try
         {
-            var bytes = await $"{chain.Content.TrimEnd('/')}.git".UrlDownload();
+            var bytes = await $"{chain.Content.TrimEnd('/')}".UrlDownload();
 
             var html = Encoding.UTF8.GetString(bytes);
 

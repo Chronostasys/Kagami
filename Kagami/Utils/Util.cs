@@ -75,8 +75,14 @@ public static class Util
         });
         // Append request header
         if (header is not null)
+        {
+            header["accept-encoding"] = "gzip, deflate, br";
+            header["accept-language"] = "zh-CN,zh;q=0.9,en;q=0.8";
+            header["accept"] = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
             foreach (var (k, v) in header)
                 request.DefaultRequestHeaders.Add(k, v);
+        }
+        Console.WriteLine(url);
 
         // Open response stream
         var response = await request.GetByteArrayAsync(url);
