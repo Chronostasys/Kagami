@@ -23,6 +23,9 @@ public static class Program
     public static async Task Main()
     {
         var token = await File.ReadAllTextAsync("pixiv.refreshtoken");
+        Console.WriteLine("***********************");
+        Console.WriteLine(token);
+        Console.WriteLine("***********************");
         _ = Task.Run(async () =>
         {
             while (true)
