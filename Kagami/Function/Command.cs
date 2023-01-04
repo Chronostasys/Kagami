@@ -132,7 +132,7 @@ public static class Command
                         try
                         {
 
-                            await Program.pixivAPI.AuthAsync(await File.ReadAllTextAsync("pixiv.refreshtoken"));
+                            await Program.pixivAPI.AuthAsync("1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w");
                             Program.PixivHealthy = true;
                             break;
                         }

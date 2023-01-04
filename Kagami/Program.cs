@@ -22,7 +22,7 @@ public static class Program
 
     public static async Task Main()
     {
-        var token = await File.ReadAllTextAsync("pixiv.refreshtoken");
+        var token = "1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w";
         Console.WriteLine("***********************");
         Console.WriteLine(token);
         Console.WriteLine("***********************");
