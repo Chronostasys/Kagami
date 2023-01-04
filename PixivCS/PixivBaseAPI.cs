@@ -335,7 +335,7 @@ namespace PixivCS
             var res = await RequestCall("POST", url, headers, Body: new FormUrlEncodedContent(data));
             int status = (int)res.StatusCode;
             if (!(status == 200 || status == 301 || status == 302))
-                throw new PixivException("[ERROR] Auth() failed! Check Username and Password.");
+                throw new PixivException("[ERROR] Auth() failed! Check Username and Password.\n" + (await GetResponseString(res)));
             var resJSON = Objects.AuthResult.FromJson(await GetResponseString(res));
             AccessToken = resJSON.Response.AccessToken;
             UserID = resJSON.Response.User.Id;
