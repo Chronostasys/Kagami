@@ -15,6 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Kagami\Kagami.csproj" />
+      <ProjectReference Include="..\NeteaseCloudMusicApi\NeteaseCloudMusicApi\NeteaseCloudMusicApi.csproj" />
     </ItemGroup>
 
 </Project>

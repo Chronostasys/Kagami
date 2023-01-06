@@ -5,7 +5,9 @@ using Konata.Core.Events.Model;
 using Konata.Core.Interfaces;
 using Konata.Core.Interfaces.Api;
 using Konata.Core.Message;
+using NeteaseCloudMusicApi;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Threading;
@@ -19,6 +21,7 @@ public static class Program
     internal static PixivCS.PixivAppAPI pixivAPI = new();
 
     internal static bool PixivHealthy = true;
+    internal static CloudMusicApi neteaseAPI = new();
 
     public static async Task Main()
     {
@@ -26,6 +29,15 @@ public static class Program
         Console.WriteLine("***********************");
         Console.WriteLine(token);
         Console.WriteLine("***********************");
+        var config = JsonSerializer.Deserialize<Config>(await File.ReadAllTextAsync("config.json"))!;
+        string account = config.netease.phone;
+        var queries = new Dictionary<string, object>();
+        bool isPhone = true;
+        queries[isPhone ? "phone" : "email"] = account;
+        queries["password"] = config.netease.password;
+        var re1 = await neteaseAPI.RequestAsync(isPhone ? CloudMusicApiProviders.LoginCellphone : CloudMusicApiProviders.Login, queries, false);
+        if (!CloudMusicApi.IsSuccess(re1))
+            Console.WriteLine("登录失败，账号或密码错误");
         _ = Task.Run(async () =>
         {
             while (true)

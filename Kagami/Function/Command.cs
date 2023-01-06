@@ -21,6 +21,7 @@ using PixivCS.Objects;
 using Konata.Codec;
 using Konata.Codec.Audio;
 using Konata.Codec.Audio.Codecs;
+using NeteaseCloudMusicApi;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -307,20 +308,40 @@ public static class Command
         return await GetMp3RecordAsync(id);
     }
 
+    public static async Task<String?> GetNetEaseMusicAsync(string id)
+    {
+        var sre = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.Cloudsearch, new Dictionary<string, object>{["keywords"] = "one last kiss"}, false);
+        var first = sre["result"]?["songs"]?[0]?["id"]?.ToString();
+        if (first is null)
+            return null;
+        var ure = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.SongUrlV1, new Dictionary<string, object>{["id"] = first}, false);
+        var url = ure["data"]?[0]?["url"]?.ToString();
+        return url;
+    }
+
     public static async Task<MessageBuilder> GetMp3RecordAsync(string id)
     {
+        // var mb = new MessageBuilder();
+        // var restr = await _client.GetStringAsync($"https://search.kuwo.cn/r.s?all={id}&ft=music&%20itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8");
+        // var nstr = restr.Replace('\'', '"').Trim();
+        // Console.WriteLine(nstr);
+        // var re = JsonSerializer.Deserialize<KuwoSearchDto>(nstr)!;
+        // if (re.abslist.Length == 0)
+        // {
+        //     mb.Text("找不到对应的歌");
+        //     return mb;
+        // }
+        // var mp3url = await _client.GetStringAsync($"https://antiserver.kuwo.cn/anti.s?type=convert_url&rid={re.abslist[0].MUSICRID}&format=mp3&response=url");
+        // mb.Add(await Mp3ToRecChainAsync(mp3url));
+        // return mb;
         var mb = new MessageBuilder();
-        var restr = await _client.GetStringAsync($"https://search.kuwo.cn/r.s?all={id}&ft=music&%20itemset=web_2013&client=kt&pn=0&rn=1&rformat=json&encoding=utf8");
-        var nstr = restr.Replace('\'', '"').Trim();
-        Console.WriteLine(nstr);
-        var re = JsonSerializer.Deserialize<KuwoSearchDto>(nstr)!;
-        if (re.abslist.Length == 0)
+        var restr = await GetNetEaseMusicAsync(id);
+        if (restr is null)
         {
             mb.Text("找不到对应的歌");
             return mb;
         }
-        var mp3url = await _client.GetStringAsync($"https://antiserver.kuwo.cn/anti.s?type=convert_url&rid={re.abslist[0].MUSICRID}&format=mp3&response=url");
-        mb.Add(await Mp3ToRecChainAsync(mp3url));
+        mb.Add(await Mp3ToRecChainAsync(restr));
         return mb;
     }
     public static async Task<RecordChain> Mp3ToRecChainAsync(string mp3url)

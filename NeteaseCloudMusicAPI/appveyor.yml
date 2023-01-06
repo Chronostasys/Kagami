@@ -1,0 +1,36 @@
+version: '{build}'
+image: Visual Studio 2019
+configuration: Release
+platform: Any CPU
+before_build:
+- cmd: appveyor-retry nuget restore
+build:
+  project: NeteaseCloudMusicApi.sln
+  verbosity: normal
+after_build:
+- cmd: >-
+    dotnet pack NeteaseCloudMusicApi\NeteaseCloudMusicApi.csproj -c Release
+
+    dotnet publish NeteaseCloudMusicApi.Demo\NeteaseCloudMusicApi.Demo.csproj -c Release -f netcoreapp3.1
+artifacts:
+- path: bin\Release\netstandard2.0
+  name: NeteaseCloudMusicApi-netstandard2.0
+- path: bin\Release\net472
+  name: NeteaseCloudMusicApi.Demo-net472
+- path: bin\Release\netcoreapp3.1\publish
+  name: NeteaseCloudMusicApi.Demo-netcoreapp3.1
+- path: bin\Release\*.*nupkg
+  name: NeteaseCloudMusicApi NuGet Packages
+deploy:
+- provider: GitHub
+  tag: $(APPVEYOR_REPO_TAG_NAME)
+  release: NeteaseCloudMusicApi
+  auth_token:
+    secure: +8UJ1C312inNq+80I8WST34vPMrCylnmTx+9rmuIh1qnsArA5x2b8yc+kcwkXmQC
+  on:
+    APPVEYOR_REPO_TAG: true
+- provider: NuGet
+  api_key:
+    secure: 9hOTykHCTMso4gC4IKtzTY+I+wr8B2wZ4X+ZiofTbOJLZUlIyfVwKISRUzXfOb+i
+  on:
+    APPVEYOR_REPO_TAG: true
