@@ -310,7 +310,7 @@ public static class Command
 
     public static async Task<String?> GetNetEaseMusicAsync(string id)
     {
-        var sre = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.Cloudsearch, new Dictionary<string, object>{["keywords"] = "one last kiss"}, false);
+        var sre = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.Cloudsearch, new Dictionary<string, object>{["keywords"] = id}, false);
         var first = sre["result"]?["songs"]?[0]?["id"]?.ToString();
         if (first is null)
             return null;

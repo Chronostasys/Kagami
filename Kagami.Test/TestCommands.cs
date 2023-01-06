@@ -29,7 +29,6 @@ public class Tests
         var queries = new Dictionary<string, object>();
         bool isPhone = true;
         queries[isPhone ? "phone" : "email"] = account;
-        Console.WriteLine("请输入密码");
         queries["password"] = "";
         var re1 = await api.RequestAsync(isPhone ? CloudMusicApiProviders.LoginCellphone : CloudMusicApiProviders.Login, queries, false);
         if (!CloudMusicApi.IsSuccess(re1))
