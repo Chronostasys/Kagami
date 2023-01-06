@@ -82,6 +82,10 @@ public static class Util
             foreach (var (k, v) in header)
                 request.DefaultRequestHeaders.Add(k, v);
         }
+        if (!url.StartsWith("http"))
+        {
+            url = "https:" + url;
+        }
         Console.WriteLine(url);
 
         // Open response stream
