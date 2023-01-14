@@ -81,8 +81,8 @@ public static class Command
                 var reply = new MessageBuilder();
                 reply.Text("我回民看不得这个");
                 await bot.SendGroupMessage(group.GroupUin, reply);
+                return;
             }
-            return;
         }
         try
         {
