@@ -127,6 +127,10 @@ public static class Command
                     return;
                 }
             }
+            if (textChain is null)
+            {
+                return;
+            }
             {
                 var at = group.Chain.GetChain<AtChain>();
                 if (at is not null && at.AtUin == bot.Uin)
