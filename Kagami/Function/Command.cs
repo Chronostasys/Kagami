@@ -44,16 +44,16 @@ public static class Command
         { 688301255, true }
     };
 
-    private static Dictionary<uint, bool> blackList =new()
+    private static Dictionary<uint, bool> blackList = new()
     {
         {1761373255,true},
     };
 
-    private static ConcurrentDictionary<string, bool> img_blackList =new();
+    private static ConcurrentDictionary<string, bool> img_blackList = new();
 
     internal static async void OnGroupPromoteAdmin(Bot bot, GroupPromoteAdminEvent pe)
     {
-        await bot.GetGroupMemberList(pe.GroupUin,true);
+        await bot.GetGroupMemberList(pe.GroupUin, true);
         return;
     }
     /// <summary>
@@ -73,51 +73,10 @@ public static class Command
         var imgchain = group.Chain.GetChain<ImageChain>();
         var mul = group.Chain.GetChain<MultiMsgChain>();
 
-        if (imgchain is not null&&textChain is not null)
-        {
-            if (textChain.Content.Contains("禁止"))
-            {
-                var hash = imgchain.FileHash.ToLower();
-                img_blackList[hash] = true;
-                var reply = new MessageBuilder();
-                reply.Text($"lsp准则更新，加入0x{hash}");
-                await bot.SendGroupMessage(group.GroupUin, reply);
-                return;
-            }
-        }
-        if (imgchain is not null)
-        {
-            var hash = imgchain.FileHash.ToLower();
-            if (img_blackList.ContainsKey(hash))
-            {
-                // await bot.RecallMessage(group.Message);
-                await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
-                var reply = new MessageBuilder();
-                reply.Text($"你违反了lsp准则0x{hash}，已被禁言6分钟");
-                reply.At(group.MemberUin);
-                await bot.SendGroupMessage(group.GroupUin, reply);
-                return;
-            }
-        }
-
-        if (textChain is not null)
-        {
-            if (textChain.Content.Contains("可怜")&&textChain.Content.Contains("我")&&
-                blackList.ContainsKey(group.MemberUin))
-            {
-                await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
-                var reply = new MessageBuilder();
-                reply.Text("你违反了lsp准则-xh专属规则，已被禁言6分钟");
-                reply.At(group.MemberUin);
-                await bot.SendGroupMessage(group.GroupUin, reply);
-                return;
-            }
-        }
-
 
         if (textChain is null)
         {
-            if ((imgchain is not null||mul is not null)&&Util.CanIDo(0.005))
+            if ((imgchain is not null || mul is not null) && Util.CanIDo(0.005))
             {
                 var reply = new MessageBuilder();
                 reply.Text("我回民看不得这个");
@@ -128,6 +87,46 @@ public static class Command
         try
         {
             MessageBuilder? reply = null;
+            if (imgchain is not null && textChain is not null)
+            {
+                if (textChain.Content.Contains("禁止"))
+                {
+                    var hash = imgchain.FileHash.ToLower();
+                    img_blackList[hash] = true;
+                    reply = new MessageBuilder();
+                    reply.Text($"lsp准则更新，加入0x{hash}");
+                    await bot.SendGroupMessage(group.GroupUin, reply);
+                    return;
+                }
+            }
+            if (imgchain is not null)
+            {
+                var hash = imgchain.FileHash.ToLower();
+                if (img_blackList.ContainsKey(hash))
+                {
+                    await bot.RecallMessage(group.Message);
+                    await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
+                    reply = new MessageBuilder();
+                    reply.Text($"你违反了lsp准则0x{hash}，已被禁言6分钟");
+                    reply.At(group.MemberUin);
+                    await bot.SendGroupMessage(group.GroupUin, reply);
+                    return;
+                }
+            }
+
+            if (textChain is not null)
+            {
+                if (textChain.Content.Contains("可怜") && textChain.Content.Contains("我") &&
+                    blackList.ContainsKey(group.MemberUin))
+                {
+                    await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
+                    reply = new MessageBuilder();
+                    reply.Text("你违反了lsp准则-xh专属规则，已被禁言6分钟");
+                    reply.At(group.MemberUin);
+                    await bot.SendGroupMessage(group.GroupUin, reply);
+                    return;
+                }
+            }
             {
                 var at = group.Chain.GetChain<AtChain>();
                 if (at is not null && at.AtUin == bot.Uin)
@@ -359,11 +358,11 @@ public static class Command
 
     public static async Task<String?> GetNetEaseMusicAsync(string id)
     {
-        var sre = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.Cloudsearch, new Dictionary<string, object>{["keywords"] = id}, false);
+        var sre = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.Cloudsearch, new Dictionary<string, object> { ["keywords"] = id }, false);
         var first = sre["result"]?["songs"]?[0]?["id"]?.ToString();
         if (first is null)
             return null;
-        var ure = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.SongUrlV1, new Dictionary<string, object>{["id"] = first}, false);
+        var ure = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.SongUrlV1, new Dictionary<string, object> { ["id"] = first }, false);
         var url = ure["data"]?[0]?["url"]?.ToString();
         return url;
     }
@@ -398,7 +397,7 @@ public static class Command
         var id = Guid.NewGuid();
         using var mp3stream = await _client.GetStreamAsync(mp3url);
         var slkstream = new MemoryStream();
-        
+
         // Create audio pipeline
         using var mp3pipeline = new AudioPipeline
         {
