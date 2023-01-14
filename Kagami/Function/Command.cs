@@ -90,7 +90,7 @@ public static class Command
             var hash = imgchain.FileHash.ToLower();
             if (img_blackList.ContainsKey(hash))
             {
-                await bot.RecallMessage(group.Message);
+                // await bot.RecallMessage(group.Message);
                 await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
                 var reply = new MessageBuilder();
                 reply.Text($"你违反了lsp准则0x{hash}，已被禁言6分钟");
