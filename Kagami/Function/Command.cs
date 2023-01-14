@@ -44,6 +44,13 @@ public static class Command
         { 688301255, true }
     };
 
+    private static Dictionary<uint, bool> blackList =new()
+    {
+        {1761373255,true},
+    };
+
+    private static ConcurrentDictionary<string, bool> img_blackList =new();
+
     internal static async void OnGroupPromoteAdmin(Bot bot, GroupPromoteAdminEvent pe)
     {
         await bot.GetGroupMemberList(pe.GroupUin,true);
@@ -61,9 +68,51 @@ public static class Command
 
         if (group.MemberUin == bot.Uin) return;
 
+
         var textChain = group.Chain.GetChain<TextChain>();
         var imgchain = group.Chain.GetChain<ImageChain>();
         var mul = group.Chain.GetChain<MultiMsgChain>();
+
+        if (imgchain is not null&&textChain is not null)
+        {
+            if (textChain.Content.Contains("禁止"))
+            {
+                var hash = imgchain.FileHash.ToLower();
+                img_blackList[hash] = true;
+                var reply = new MessageBuilder();
+                reply.Text($"lsp准则更新，加入0x{hash}");
+                await bot.SendGroupMessage(group.GroupUin, reply);
+                return;
+            }
+        }
+        if (imgchain is not null)
+        {
+            var hash = imgchain.FileHash.ToLower();
+            if (img_blackList.ContainsKey(hash))
+            {
+                await bot.RecallMessage(group.Message);
+                await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
+                var reply = new MessageBuilder();
+                reply.Text($"你违反了lsp准则0x{hash}，已被禁言6分钟");
+                reply.At(group.MemberUin);
+                await bot.SendGroupMessage(group.GroupUin, reply);
+                return;
+            }
+        }
+
+        if (textChain is not null)
+        {
+            if (textChain.Content.Contains("可怜")&&textChain.Content.Contains("我")&&
+                blackList.ContainsKey(group.MemberUin))
+            {
+                await bot.GroupMuteMember(group.GroupUin, group.MemberUin, 360);
+                var reply = new MessageBuilder();
+                reply.Text("你违反了lsp准则-xh专属规则，已被禁言6分钟");
+                reply.At(group.MemberUin);
+                await bot.SendGroupMessage(group.GroupUin, reply);
+                return;
+            }
+        }
 
 
         if (textChain is null)
