@@ -231,10 +231,10 @@ public static class Command
                         await IllustAsync(rec.Illusts);
 
                     }
-                    else if (textChain.Content.Contains("日排行"))
+                    else if (textChain.Content.Contains("排行"))
                     {
-
-                        var rec = await Program.pixivAPI.GetIllustRankingAsync("day_male");
+                        var mod = textChain.Content.Split("排行")[1].Trim();
+                        var rec = await Program.pixivAPI.GetIllustRankingAsync(mod);
                         await IllustAsync(rec.Illusts);
 
                     }
