@@ -363,10 +363,12 @@ public static class Command
     public static async Task<String?> GetNetEaseMusicAsync(string id)
     {
         var sre = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.Cloudsearch, new Dictionary<string, object> { ["keywords"] = id }, false);
+        Console.WriteLine(sre);
         var first = sre["result"]?["songs"]?[0]?["id"]?.ToString();
         if (first is null)
             return null;
         var ure = await Program.neteaseAPI.RequestAsync(CloudMusicApiProviders.SongUrlV1, new Dictionary<string, object> { ["id"] = first }, false);
+        Console.WriteLine(ure);
         var url = ure["data"]?[0]?["url"]?.ToString();
         return url;
     }
