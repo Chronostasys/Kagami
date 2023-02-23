@@ -41,7 +41,8 @@ public static class Command
         {158441764,true},
         {1054725794,true},
         { 658322302, true },
-        { 688301255, true }
+        { 688301255, true },
+        { 601805542, true }
     };
 
     private static Dictionary<uint, bool> blackList = new()

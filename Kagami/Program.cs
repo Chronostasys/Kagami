@@ -89,16 +89,16 @@ public static class Program
             // Handle messages from group
             _bot.OnGroupMessage += Command.OnGroupMessage;
             _bot.OnGroupPromoteAdmin += Command.OnGroupPromoteAdmin;
-            _bot.OnGroupMemberIncrease += async (s, e) => 
-            {
-                await s.GetGroupMemberList(e.GroupUin,true);
-                var msg = new MessageBuilder();
-                msg.At(e.MemberUin);
-                msg.Text("欢迎来到理塘！");
-                await s.SendGroupPoke(e.GroupUin, e.MemberUin);
-                await s.SendGroupMessage(e.GroupUin, msg);
-                //await s.SendGroupMessage(e.GroupUin, await Command.GetMp3RecordAsync("zood"));
-            };
+            // _bot.OnGroupMemberIncrease += async (s, e) => 
+            // {
+            //     await s.GetGroupMemberList(e.GroupUin,true);
+            //     var msg = new MessageBuilder();
+            //     msg.At(e.MemberUin);
+            //     msg.Text("欢迎来到理塘！");
+            //     await s.SendGroupPoke(e.GroupUin, e.MemberUin);
+            //     await s.SendGroupMessage(e.GroupUin, msg);
+            //     //await s.SendGroupMessage(e.GroupUin, await Command.GetMp3RecordAsync("zood"));
+            // };
             _bot.OnGroupMemberDecrease += async (s, e) => await s.GetGroupMemberList(e.GroupUin,true);
         }
 
