@@ -606,12 +606,12 @@ public static class Command
             re.Add(TextChain.Create($"生成失败 {await response.Content.ReadAsStringAsync()}"));
             return re;
         }
-        var waitch = new MessageBuilder();
-        waitch.Add(TextChain.Create("正在生成图片"));
-        await bot.SendGroupMessage(guin, waitch);
+        // var waitch = new MessageBuilder();
+        // waitch.Add(TextChain.Create("正在生成图片"));
+        // await bot.SendGroupMessage(guin, waitch);
         var rep1 = await response.Content.ReadFromJsonAsync<PredictResult>();
-        Console.WriteLine($"start {rep1}");
-        var bs = new byte[1];
+        Console.WriteLine($"start {rep1.id}");
+        var url = "";
         while (true)
         {
             await Task.Delay(500);
@@ -630,15 +630,18 @@ public static class Command
                 re.Add(TextChain.Create($"生成失败 {await checkresponse.Content.ReadAsStringAsync()}"));
                 return re;
             }
+            // await checkresponse.Content.CopyToAsync(Console.OpenStandardOutput());
+            Console.WriteLine($"check");
             var rep2 = await checkresponse.Content.ReadFromJsonAsync<PredictResult>();
-            Console.WriteLine($"check {rep2}");
             if (rep2?.output != null && rep2.output.Length >0)
             {
-                bs = await _client.GetByteArrayAsync(rep2.output.Last());
+                Console.WriteLine($"check {rep2.output.Last()}");
+                url = rep2.output.Last();
                 break;
             }
         }
-        var ich = ImageChain.Create(bs);
+        var ich = ImageChain.CreateFromUrl(url);
+        // var ich = ImageChain.Create(bs);
         re.Add(ich);
         ch.AddMessage(bot.Uin, "寄", re.Build());
         re.Add(ch);
