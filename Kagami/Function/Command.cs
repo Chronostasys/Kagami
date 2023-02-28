@@ -591,14 +591,13 @@ public static class Command
             },
             Content = JsonContent.Create(new
             {
-                version = "6359a0cab3ca6e4d3320c33d79096161208e9024d174b2311e5a21b6c7e1131c",
+                version = "27b93a2413e7f36cd83da926f3656280b2931564ff050bf9575f1fdf9bcd7478",
                 input = new
                 {
                     prompt = text
                 }
             })
         };
-        var ch = new MultiMsgChain();
         var response = await _client.SendAsync(httpRequestMessage);
         var re = new MessageBuilder();
         if (!response.IsSuccessStatusCode)
@@ -606,9 +605,9 @@ public static class Command
             re.Add(TextChain.Create($"生成失败 {await response.Content.ReadAsStringAsync()}"));
             return re;
         }
-        // var waitch = new MessageBuilder();
-        // waitch.Add(TextChain.Create("正在生成图片"));
-        // await bot.SendGroupMessage(guin, waitch);
+        var waitch = new MessageBuilder();
+        waitch.Add(TextChain.Create("正在生成图片"));
+        await bot.SendGroupMessage(guin, waitch);
         var rep1 = await response.Content.ReadFromJsonAsync<PredictResult>();
         Console.WriteLine($"start {rep1.id}");
         var url = "";
@@ -643,8 +642,9 @@ public static class Command
         var ich = ImageChain.CreateFromUrl(url);
         // var ich = ImageChain.Create(bs);
         re.Add(ich);
-        ch.AddMessage(bot.Uin, "寄", re.Build());
-        re.Add(ch);
+        // var ch = new MultiMsgChain();
+        // ch.AddMessage(bot.Uin, "寄", re.Build());
+        // re.Add(ch);
         return re;
     }
     /// <summary>
