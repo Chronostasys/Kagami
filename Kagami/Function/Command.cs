@@ -610,7 +610,7 @@ public static class Command
         waitch.Add(TextChain.Create("正在生成图片"));
         await bot.SendGroupMessage(guin, waitch);
         var rep1 = await response.Content.ReadFromJsonAsync<PredictResult>();
-        Console.WriteLine("start",rep1);
+        Console.WriteLine($"start {rep1}");
         var bs = new byte[1];
         while (true)
         {
@@ -631,7 +631,7 @@ public static class Command
                 return re;
             }
             var rep2 = await checkresponse.Content.ReadFromJsonAsync<PredictResult>();
-            Console.WriteLine("check",rep2);
+            Console.WriteLine($"check {rep2}");
             if (rep2?.output != null && rep2.output.Length >0)
             {
                 bs = await _client.GetByteArrayAsync(rep2.output.Last());
