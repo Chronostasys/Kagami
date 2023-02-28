@@ -236,7 +236,7 @@ public static class Command
                     else if (textChain.Content.Contains("生成"))
                     {
                         var id = textChain.Content.Split("生成")[1].Trim();
-                        reply = await Command.OnCommandGenImg(bot,id);
+                        reply = await Command.OnCommandGenImg(bot,id, group.GroupUin);
 
                     }
                     else if (textChain.Content.Contains("排行"))
@@ -579,7 +579,7 @@ public static class Command
             return Text($"{e.Message} ({e.HResult})");
         }
     }
-    public static async Task<MessageBuilder> OnCommandGenImg(Bot bot, string text)
+    public static async Task<MessageBuilder> OnCommandGenImg(Bot bot, string text,uint guin)
     {
         var httpRequestMessage = new HttpRequestMessage
         {
@@ -606,12 +606,39 @@ public static class Command
             re.Add(TextChain.Create($"生成失败 {await response.Content.ReadAsStringAsync()}"));
             return re;
         }
-        var ich = ImageChain.Create(await response.Content.ReadAsByteArrayAsync());
-        if (ich is null)
+        var waitch = new MessageBuilder();
+        waitch.Add(TextChain.Create("正在生成图片"));
+        await bot.SendGroupMessage(guin, waitch);
+        var rep1 = await response.Content.ReadFromJsonAsync<PredictResult>();
+        Console.WriteLine("start",rep1);
+        var bs = new byte[1];
+        while (true)
         {
-            re.Add(TextChain.Create("生成失败"));
-            return re;
+            await Task.Delay(500);
+            var check = new HttpRequestMessage
+            {
+                Method = HttpMethod.Get,
+                RequestUri = new Uri($"https://api.replicate.com/v1/predictions/{rep1!.id}"),
+                Headers = {
+                    { HttpRequestHeader.Authorization.ToString(), $"Token {Program.replicatetoken}" },
+                    { HttpRequestHeader.ContentType.ToString(), "application/json" },
+                }
+            };
+            var checkresponse = await _client.SendAsync(check);
+            if (!checkresponse.IsSuccessStatusCode)
+            {
+                re.Add(TextChain.Create($"生成失败 {await checkresponse.Content.ReadAsStringAsync()}"));
+                return re;
+            }
+            var rep2 = await checkresponse.Content.ReadFromJsonAsync<PredictResult>();
+            Console.WriteLine("check",rep2);
+            if (rep2?.output != null && rep2.output.Length >0)
+            {
+                bs = await _client.GetByteArrayAsync(rep2.output.Last());
+                break;
+            }
         }
+        var ich = ImageChain.Create(bs);
         re.Add(ich);
         ch.AddMessage(bot.Uin, "寄", re.Build());
         re.Add(ch);
@@ -725,4 +752,12 @@ public static class Command
 
     private static MessageBuilder Text(string text)
         => new MessageBuilder().Text(text);
+}
+
+
+
+public class PredictResult
+{
+    public string id { get; set; }
+    public string[] output { get; set; }
 }
