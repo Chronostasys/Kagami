@@ -22,6 +22,7 @@ using Konata.Codec;
 using Konata.Codec.Audio;
 using Konata.Codec.Audio.Codecs;
 using NeteaseCloudMusicApi;
+using System.Net;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -230,6 +231,12 @@ public static class Command
                         var id = textChain.Content.Split("搜索")[1].Trim();
                         var rec = await Program.pixivAPI.GetSearchIllustAsync(id);
                         await IllustAsync(rec.Illusts);
+
+                    }
+                    else if (textChain.Content.Contains("生成"))
+                    {
+                        var id = textChain.Content.Split("生成")[1].Trim();
+                        reply = await Command.OnCommandGenImg(bot,id);
 
                     }
                     else if (textChain.Content.Contains("排行"))
@@ -572,7 +579,40 @@ public static class Command
             return Text($"{e.Message} ({e.HResult})");
         }
     }
-
+    public static async Task<MessageBuilder> OnCommandGenImg(Bot bot, string text)
+    {
+        var httpRequestMessage = new HttpRequestMessage
+        {
+            Method = HttpMethod.Post,
+            RequestUri = new Uri("https://api.replicate.com/v1/predictions"),
+            Headers = {
+                { HttpRequestHeader.Authorization.ToString(), $"Token {Program.replicatetoken}" },
+                { HttpRequestHeader.ContentType.ToString(), "application/json" },
+                { "Converter-Job-Priority", "1000" },
+            },
+            Content = JsonContent.Create(new
+            {
+                version = "6359a0cab3ca6e4d3320c33d79096161208e9024d174b2311e5a21b6c7e1131c",
+                input = new
+                {
+                    prompt = text
+                }
+            })
+        };
+        var ch = new MultiMsgChain();
+        var response = await _client.SendAsync(httpRequestMessage);
+        var re = new MessageBuilder();
+        var ich = ImageChain.Create(await response.Content.ReadAsByteArrayAsync());
+        if (ich is null)
+        {
+            re.Add(TextChain.Create("生成失败"));
+            return re;
+        }
+        re.Add(ich);
+        ch.AddMessage(bot.Uin, "寄", re.Build());
+        re.Add(ch);
+        return re;
+    }
     /// <summary>
     /// Set title
     /// </summary>

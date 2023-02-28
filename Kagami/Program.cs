@@ -22,6 +22,7 @@ public static class Program
 
     internal static bool PixivHealthy = true;
     internal static CloudMusicApi neteaseAPI = new();
+    internal static string replicatetoken = "";
 
     public static async Task Main()
     {
@@ -31,6 +32,7 @@ public static class Program
         Console.WriteLine("***********************");
         var config = JsonSerializer.Deserialize<Config>(await File.ReadAllTextAsync("config.json"))!;
         string account = config.netease.phone;
+        replicatetoken = config.replicate.token;
         var queries = new Dictionary<string, object>();
         bool isPhone = true;
         queries[isPhone ? "phone" : "email"] = account;

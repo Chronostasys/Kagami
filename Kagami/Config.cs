@@ -2,12 +2,12 @@ namespace Kagami
 {
     internal class Config
     {
-//         {
-//     "netease":{
-//         "phone":"",
-//         "password":""
-//     }
-// }
         public NeteaseConfig netease { get; set; }
+        public ReplicateConfig replicate { get; set; }
+    }
+
+    public class ReplicateConfig
+    {
+        public string token { get; set; }
     }
 }
