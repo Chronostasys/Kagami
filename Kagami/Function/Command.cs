@@ -588,7 +588,6 @@ public static class Command
             Headers = {
                 { HttpRequestHeader.Authorization.ToString(), $"Token {Program.replicatetoken}" },
                 { HttpRequestHeader.ContentType.ToString(), "application/json" },
-                { "Converter-Job-Priority", "1000" },
             },
             Content = JsonContent.Create(new
             {
@@ -602,6 +601,11 @@ public static class Command
         var ch = new MultiMsgChain();
         var response = await _client.SendAsync(httpRequestMessage);
         var re = new MessageBuilder();
+        if (!response.IsSuccessStatusCode)
+        {
+            re.Add(TextChain.Create($"生成失败 {await response.Content.ReadAsStringAsync()}"));
+            return re;
+        }
         var ich = ImageChain.Create(await response.Content.ReadAsByteArrayAsync());
         if (ich is null)
         {
