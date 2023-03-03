@@ -24,6 +24,8 @@ public static class Program
     internal static CloudMusicApi neteaseAPI = new();
     internal static string replicatetoken = "";
 
+    internal static string openAiKey = "";
+
     public static async Task Main()
     {
         var token = "1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w";
@@ -33,6 +35,7 @@ public static class Program
         var config = JsonSerializer.Deserialize<Config>(await File.ReadAllTextAsync("config.json"))!;
         string account = config.netease.phone;
         replicatetoken = config.replicate.token;
+        openAiKey = config.OpenAIKey;
         var queries = new Dictionary<string, object>();
         bool isPhone = true;
         queries[isPhone ? "phone" : "email"] = account;

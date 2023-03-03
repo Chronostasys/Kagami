@@ -43,8 +43,13 @@ public static class Command
         {1054725794,true},
         { 658322302, true },
         { 688301255, true },
-        { 601805542, true }
+        { 601805542, true },
+        {78810015,true}
     };
+
+    private static ConcurrentDictionary<uint, FixedSizedQueue<ChatReqMsg>> chatContexts = new();
+
+
 
     private static Dictionary<uint, bool> blackList = new()
     {
@@ -236,7 +241,7 @@ public static class Command
                     else if (textChain.Content.Contains("生成"))
                     {
                         var id = textChain.Content.Split("生成")[1].Trim();
-                        reply = await Command.OnCommandGenImg(bot,id, group.GroupUin);
+                        reply = await Command.OnCommandGenImg(bot, id, group.GroupUin);
 
                     }
                     else if (textChain.Content.Contains("排行"))
@@ -318,6 +323,74 @@ public static class Command
                     reply = await OnCommandGithubParser(textChain);
                 else if (Util.CanIDo(0.005))
                     reply = OnRepeat(group.Chain);
+                else if (textChain.Content.StartsWith("/enablechat"))
+                {
+                    if (group.MemberUin == spuin)
+                    {
+                        reply = new MessageBuilder();
+                        var args = textChain.Content[12..];
+                        var a = args.Split(" ");
+                        var limit = int.Parse(a[0]);
+                        var queue = new FixedSizedQueue<ChatReqMsg>(limit,
+                        new ChatReqMsg
+                        {
+                            role = "system",
+                            content = a[1]
+                        }
+                        );
+
+                        chatContexts[group.GroupUin] = queue;
+                        reply.Text("已开启聊天");
+                    }
+                    else
+                    {
+                        reply = new MessageBuilder();
+                        reply.Text("你没有权限");
+                    }
+                }
+                else if (textChain.Content.StartsWith("/disablechat"))
+                {
+                    if (group.MemberUin == spuin)
+                    {
+                        reply = new MessageBuilder();
+                        chatContexts.Remove(group.GroupUin, out var _);
+                        reply.Text("已关闭聊天");
+                    }
+                    else
+                    {
+                        reply = new MessageBuilder();
+                        reply.Text("你没有权限");
+                    }
+                }
+                else if (chatContexts[group.GroupUin] != null)
+                {
+                    var msgqueue = chatContexts[group.GroupUin];
+                    // msgqueue.Enqueue(new ChatReqMsg{
+                    //     role="user",
+                    //     content = textChain.Content
+                    // });
+                    var newChat = new ChatReqMsg
+                    {
+                        role = "user",
+                        content = textChain.Content
+                    };
+                    var msgs = msgqueue.ToArray();
+                    var newmsgs = msgs.Append(newChat).ToArray();
+                    var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
+                    {
+                        msg = newmsgs,
+                        apiKey = Program.openAiKey
+                    });
+                    var resp = await re.Content.ReadAsStringAsync();
+                    msgqueue.Enqueue(newChat);
+                    msgqueue.Enqueue(new ChatReqMsg
+                    {
+                        role = "assistant",
+                        content = resp
+                    });
+                    reply = new MessageBuilder();
+                    reply.Text(resp);
+                }
             }
 
             // Send reply message
@@ -579,7 +652,7 @@ public static class Command
             return Text($"{e.Message} ({e.HResult})");
         }
     }
-    public static async Task<MessageBuilder> OnCommandGenImg(Bot bot, string text,uint guin)
+    public static async Task<MessageBuilder> OnCommandGenImg(Bot bot, string text, uint guin)
     {
         var httpRequestMessage = new HttpRequestMessage
         {
@@ -632,7 +705,7 @@ public static class Command
             // await checkresponse.Content.CopyToAsync(Console.OpenStandardOutput());
             Console.WriteLine($"check");
             var rep2 = await checkresponse.Content.ReadFromJsonAsync<PredictResult>();
-            if (rep2?.output != null && rep2.output.Length >0)
+            if (rep2?.output != null && rep2.output.Length > 0)
             {
                 Console.WriteLine($"check {rep2.output.Last()}");
                 url = rep2.output.Last();
@@ -764,3 +837,49 @@ public class PredictResult
     public string id { get; set; }
     public string[] output { get; set; }
 }
+
+
+
+public class ChatReq
+{
+    public string apiKey { get; set; }
+    public ChatReqMsg[] msg { get; set; }
+
+}
+
+public class ChatReqMsg
+{
+    public string role { get; set; }
+    public string content { get; set; }
+
+}
+
+
+public class FixedSizedQueue<T>
+{
+    T item;
+    readonly ConcurrentQueue<T> q = new ConcurrentQueue<T>();
+    private object lockObject = new object();
+
+    public int Limit { get; set; }
+
+    public FixedSizedQueue(int limit, T head)
+    {
+        item = head;
+        Limit = limit;
+    }
+    public void Enqueue(T obj)
+    {
+        q.Enqueue(obj);
+        lock (lockObject)
+        {
+            T overflow;
+            while (q.Count > Limit && q.TryDequeue(out _)) ;
+        }
+    }
+    public T[] ToArray()
+    {
+        return q.ToArray().Prepend(item).ToArray();
+    }
+}
+
