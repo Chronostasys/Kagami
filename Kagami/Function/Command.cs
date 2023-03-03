@@ -365,6 +365,11 @@ public static class Command
                 }
                 else if (chatContexts.ContainsKey(group.GroupUin))
                 {
+                    var atChain = group.Chain.GetChain<AtChain>();
+                    if (atChain != null && atChain.AtUin != bot.Uin)
+                    {
+                        return;
+                    }
                     var msgqueue = chatContexts[group.GroupUin];
                     // msgqueue.Enqueue(new ChatReqMsg{
                     //     role="user",
