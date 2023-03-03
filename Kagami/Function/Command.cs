@@ -34,6 +34,7 @@ public static class Command
     private static uint _messageCounter;
     private static HttpClient _client = new();
     private static readonly uint spuin = 435230136;
+    private static readonly uint creator = 1769712655;
 
     private static Dictionary<uint, bool> whiteList = new()
     {
@@ -325,7 +326,7 @@ public static class Command
                     reply = OnRepeat(group.Chain);
                 else if (textChain.Content.StartsWith("/enablechat"))
                 {
-                    if (group.MemberUin == spuin)
+                    if (group.MemberUin == creator)
                     {
                         reply = new MessageBuilder();
                         var args = textChain.Content[12..];
@@ -350,7 +351,7 @@ public static class Command
                 }
                 else if (textChain.Content.StartsWith("/disablechat"))
                 {
-                    if (group.MemberUin == spuin)
+                    if (group.MemberUin == creator)
                     {
                         reply = new MessageBuilder();
                         chatContexts.Remove(group.GroupUin, out var _);
