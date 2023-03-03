@@ -379,8 +379,8 @@ public static class Command
                     var newmsgs = msgs.Append(newChat).ToArray();
                     var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
                     {
-                        msg = newmsgs,
-                        apiKey = Program.openAiKey
+                        messages = newmsgs,
+                        apikey = Program.openAiKey
                     });
                     var resp = await re.Content.ReadAsStringAsync();
                     msgqueue.Enqueue(newChat);
@@ -843,8 +843,8 @@ public class PredictResult
 
 public class ChatReq
 {
-    public string apiKey { get; set; }
-    public ChatReqMsg[] msg { get; set; }
+    public string apikey { get; set; }
+    public ChatReqMsg[] messages { get; set; }
 
 }
 
