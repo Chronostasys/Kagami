@@ -362,7 +362,7 @@ public static class Command
                         reply.Text("你没有权限");
                     }
                 }
-                else if (chatContexts[group.GroupUin] != null)
+                else if (chatContexts.ContainsKey(group.GroupUin))
                 {
                     var msgqueue = chatContexts[group.GroupUin];
                     // msgqueue.Enqueue(new ChatReqMsg{
