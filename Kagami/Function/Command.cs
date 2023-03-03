@@ -366,7 +366,7 @@ public static class Command
                 else if (chatContexts.ContainsKey(group.GroupUin))
                 {
                     var atChain = group.Chain.GetChain<AtChain>();
-                    if (atChain != null && atChain.AtUin != bot.Uin)
+                    if (atChain == null || atChain.AtUin != bot.Uin)
                     {
                         return;
                     }
