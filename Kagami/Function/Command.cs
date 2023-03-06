@@ -432,62 +432,87 @@ public static class Command
         }
     }
 
-    public static async void OnFriendMessage(Bot bot, FriendMessageEvent ev){
-        var txt = ev.Chain.GetChain<TextChain>();
-        if (txt == null)
+    public static async void OnFriendMessage(Bot bot, FriendMessageEvent ev)
+    {
+        try
         {
-            return;
-        }
-        var text = txt.Content;
-        if(text.StartsWith("/help")) {
-            var reply = new MessageBuilder();
-            reply.Text("命令列表：\n"+
-            "/init [ctxnum] [role]\n"+
-            "初始化聊天机器人，ctxnum是保存的上下文数量（多了在聊天途中可能会超出最大请求token数限制，建议10左右），role是初始化设定，"
-            +"比如：“你是一个傲娇的女高中生，请用可爱的语气说话” 该设定在一个上下文中会永久起效。请注意此命令会重置对话上下文");
-            await bot.SendFriendMessage(ev.FriendUin, reply);
-        }else if (text.StartsWith("/init"))
-        {
-            var args = text[6..].Split(" ");
-            var ctxnum = int.Parse(args[0]);
-            var role = args[1];
-            var queue = new FixedSizedQueue<ChatReqMsg>(ctxnum,
-            new ChatReqMsg
+            var txt = ev.Chain.GetChain<TextChain>();
+            if (txt == null)
             {
-                role = "system",
-                content = role
+                return;
             }
-            );
-            chatContexts[ev.FriendUin] = queue;
-            var reply = new MessageBuilder();
-            reply.Text("已初始化聊天机器人");
-            await bot.SendFriendMessage(ev.FriendUin, reply);
-        }else {
-            if(chatContexts.ContainsKey(ev.FriendUin)){
-                var msgqueue = chatContexts[ev.FriendUin];
-                var newChat = new ChatReqMsg
-                {
-                    role = "user",
-                    content = text
-                };
-                var msgs = msgqueue.ToArray();
-                var newmsgs = msgs.Append(newChat).ToArray();
-                var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
-                {
-                    messages = newmsgs,
-                    apikey = Program.openAiKey2
-                });
-                var resp = await re.Content.ReadAsStringAsync();
-                msgqueue.Enqueue(newChat);
-                msgqueue.Enqueue(new ChatReqMsg
-                {
-                    role = "assistant",
-                    content = resp
-                });
+            var text = txt.Content;
+            if (text.StartsWith("/help"))
+            {
                 var reply = new MessageBuilder();
-                reply.Text(resp);
+                reply.Text("命令列表：\n" +
+                "/init [ctxnum] [role]\n" +
+                "初始化聊天机器人，ctxnum是保存的上下文数量（多了在聊天途中可能会超出最大请求token数限制，建议10左右），role是初始化设定，"
+                + "比如：“你是一个傲娇的女高中生，请用可爱的语气说话” 该设定在一个上下文中会永久起效。请注意此命令会重置对话上下文");
                 await bot.SendFriendMessage(ev.FriendUin, reply);
             }
+            else if (text.StartsWith("/init"))
+            {
+                var args = text[6..].Split(" ");
+                if (args.Length != 2)
+                {
+                    var reply1 = new MessageBuilder();
+                    reply1.Text("参数错误");
+                    await bot.SendFriendMessage(ev.FriendUin, reply1);
+                    return;
+                }
+                var ctxnum = int.Parse(args[0]);
+                var role = args[1];
+                var queue = new FixedSizedQueue<ChatReqMsg>(ctxnum,
+                new ChatReqMsg
+                {
+                    role = "system",
+                    content = role
+                }
+                );
+                chatContexts[ev.FriendUin] = queue;
+                var reply = new MessageBuilder();
+                reply.Text("已初始化聊天机器人");
+                await bot.SendFriendMessage(ev.FriendUin, reply);
+            }
+            else
+            {
+                if (chatContexts.ContainsKey(ev.FriendUin))
+                {
+                    var msgqueue = chatContexts[ev.FriendUin];
+                    var newChat = new ChatReqMsg
+                    {
+                        role = "user",
+                        content = text
+                    };
+                    var msgs = msgqueue.ToArray();
+                    var newmsgs = msgs.Append(newChat).ToArray();
+                    var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
+                    {
+                        messages = newmsgs,
+                        apikey = Program.openAiKey2
+                    });
+                    var resp = await re.Content.ReadAsStringAsync();
+                    msgqueue.Enqueue(newChat);
+                    msgqueue.Enqueue(new ChatReqMsg
+                    {
+                        role = "assistant",
+                        content = resp
+                    });
+                    var reply = new MessageBuilder();
+                    reply.Text(resp);
+                    await bot.SendFriendMessage(ev.FriendUin, reply);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+            Console.WriteLine(e.StackTrace);
+
+            // Send error print
+            await bot.SendFriendMessage(ev.FriendUin,
+                Text($"{e.Message}\n{e.StackTrace}"));
         }
     }
 
