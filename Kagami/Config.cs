@@ -6,6 +6,8 @@ namespace Kagami
         public ReplicateConfig replicate { get; set; }
 
         public string OpenAIKey { get; set; }
+        public string OpenAIKey2 { get; set; }
+        public string MagicStr { get; set; }
     }
 
     public class ReplicateConfig

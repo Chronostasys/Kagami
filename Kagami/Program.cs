@@ -25,6 +25,7 @@ public static class Program
     internal static string replicatetoken = "";
 
     internal static string openAiKey = "";
+    internal static string openAiKey2 = "";
 
     public static async Task Main()
     {
@@ -36,6 +37,7 @@ public static class Program
         string account = config.netease.phone;
         replicatetoken = config.replicate.token;
         openAiKey = config.OpenAIKey;
+        openAiKey2 = config.OpenAIKey2;
         var queries = new Dictionary<string, object>();
         bool isPhone = true;
         queries[isPhone ? "phone" : "email"] = account;
@@ -90,6 +92,15 @@ public static class Program
 
             // Handle poke messages
             _bot.OnGroupPoke += Poke.OnGroupPoke;
+
+            _bot.OnFriendRequest += async (s, e) =>
+            {
+                if(e.ReqComment.Contains(config.MagicStr)){
+                    await s.ApproveFriendRequest(e.ReqUin,e.Token);
+                }
+            };
+
+            _bot.OnFriendMessage += Command.OnFriendMessage;
 
             // Handle messages from group
             _bot.OnGroupMessage += Command.OnGroupMessage;
