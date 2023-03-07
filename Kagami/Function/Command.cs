@@ -290,7 +290,7 @@ public static class Command
                 }
                 else if (textChain.Content.StartsWith("/help"))
                     reply = OnCommandHelp(textChain);
-                if (textChain.Content.Contains("来首"))
+                else if (textChain.Content.Contains("来首"))
                     reply = await OnKuwoAsync(textChain);
                 else if (textChain.Content.StartsWith("/ping"))
                     reply = OnCommandPing(textChain);
@@ -370,24 +370,34 @@ public static class Command
                     {
                         return;
                     }
+                    var resp = "";
                     var msgqueue = chatContexts[group.GroupUin];
-                    // msgqueue.Enqueue(new ChatReqMsg{
-                    //     role="user",
-                    //     content = textChain.Content
-                    // });
                     var newChat = new ChatReqMsg
                     {
                         role = "user",
                         content = textChain.Content
                     };
-                    var msgs = msgqueue.ToArray();
-                    var newmsgs = msgs.Append(newChat).ToArray();
-                    var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
+                    while (true)
                     {
-                        messages = newmsgs,
-                        apikey = Program.openAiKey
-                    });
-                    var resp = await re.Content.ReadAsStringAsync();
+                        // msgqueue.Enqueue(new ChatReqMsg{
+                        //     role="user",
+                        //     content = textChain.Content
+                        // });
+                        var msgs = msgqueue.ToArray();
+                        var newmsgs = msgs.Append(newChat).ToArray();
+                        var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
+                        {
+                            messages = newmsgs,
+                            apikey = Program.openAiKey
+                        });
+                        resp = await re.Content.ReadAsStringAsync();   
+                        if (resp.Contains("4096 tokens"))
+                        {
+                            msgqueue.Dequeue();
+                        }else {
+                            break;
+                        }
+                    }
                     msgqueue.Enqueue(newChat);
                     msgqueue.Enqueue(new ChatReqMsg
                     {
@@ -963,8 +973,13 @@ public class FixedSizedQueue<T>
         q.Enqueue(obj);
         lock (lockObject)
         {
-            T overflow;
             while (q.Count > Limit && q.TryDequeue(out _)) ;
+        }
+    }
+    public void Dequeue() 
+    {
+        lock (lockObject){
+            q.TryDequeue(out _);
         }
     }
     public T[] ToArray()
