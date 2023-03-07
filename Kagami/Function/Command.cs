@@ -290,6 +290,11 @@ public static class Command
                 }
                 else if (textChain.Content.StartsWith("/help"))
                     reply = OnCommandHelp(textChain);
+
+                if (reply!=null)
+                {
+                    
+                }
                 else if (textChain.Content.Contains("来首"))
                     reply = await OnKuwoAsync(textChain);
                 else if (textChain.Content.StartsWith("/ping"))
