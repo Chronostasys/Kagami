@@ -341,7 +341,7 @@ public static class Command
                         new ChatReqMsg
                         {
                             role = "system",
-                            content = a[1]
+                            content = string.Join(" ",a[1..])
                         }
                         );
 
