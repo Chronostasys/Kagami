@@ -26,6 +26,7 @@ public static class Program
 
     internal static string openAiKey = "";
     internal static string openAiKey2 = "";
+    internal static Config config = new();
 
     public static async Task Main()
     {
@@ -34,6 +35,7 @@ public static class Program
         Console.WriteLine(token);
         Console.WriteLine("***********************");
         var config = JsonSerializer.Deserialize<Config>(await File.ReadAllTextAsync("config.json"))!;
+        Program.config = config;
         string account = config.netease.phone;
         replicatetoken = config.replicate.token;
         openAiKey = config.OpenAIKey;

@@ -23,6 +23,7 @@ using Konata.Codec.Audio;
 using Konata.Codec.Audio.Codecs;
 using NeteaseCloudMusicApi;
 using System.Net;
+using Newtonsoft.Json.Linq;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -410,7 +411,8 @@ public static class Command
                         content = resp
                     });
                     reply = new MessageBuilder();
-                    reply.Text(resp);
+                    
+                    await BuildGptRepl(reply, resp);
                 }
             }
 
@@ -444,6 +446,26 @@ public static class Command
             // Send error print
             await bot.SendGroupMessage(group.GroupUin,
                 Text($"{e.Message}\n{e.StackTrace}"));
+        }
+    }
+
+    public static async Task BuildGptRepl(MessageBuilder mb, string repl) {
+        if (repl.Length<100)
+        {
+            var re = await _client.PostAsJsonAsync(Program.config.Infer , new {
+                prompt = repl,
+                speaker = "菲谢尔 Fishl (Genshin Impact)",
+                lang = "简体中文",
+                speed = 1
+            });
+            // 读取返回json中的url字段
+            var resp = await re.Content.ReadAsStringAsync();
+            var obj = JObject.Parse(resp);
+            var url = obj["url"].ToString();
+            var rec = await SilkToRecChainAsync($"http://43.154.191.136:7500{url}.silk");
+            mb.Add(rec);
+        }else {
+            mb.Text(repl);
         }
     }
 
@@ -584,9 +606,17 @@ public static class Command
         mb.Add(await Mp3ToRecChainAsync(restr));
         return mb;
     }
+
+    public static async Task<RecordChain> SilkToRecChainAsync(string mp3url)
+    {
+         var bs = await _client.GetByteArrayAsync(mp3url);
+        
+        var re = RecordChain.Create(bs);
+        return re;
+    }
+
     public static async Task<RecordChain> Mp3ToRecChainAsync(string mp3url)
     {
-        var id = Guid.NewGuid();
         using var mp3stream = await _client.GetStreamAsync(mp3url);
         var slkstream = new MemoryStream();
 
