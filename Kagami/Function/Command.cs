@@ -454,9 +454,9 @@ public static class Command
         {
             var re = await _client.PostAsJsonAsync(Program.config.Infer , new {
                 prompt = repl,
-                speaker = "菲谢尔 Fishl (Genshin Impact)",
+                speaker = "派蒙 Paimon (Genshin Impact)",
                 lang = "简体中文",
-                speed = 1
+                speed = 0.7
             });
             // 读取返回json中的url字段
             var resp = await re.Content.ReadAsStringAsync();
