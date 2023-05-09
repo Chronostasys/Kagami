@@ -36,6 +36,8 @@ public static class Command
     private static HttpClient _client = new();
     private static readonly uint spuin = 435230136;
     private static readonly uint creator = 1769712655;
+    static bool EnableGPT4 = false;
+    static bool EnableVoice = false;
 
     private static Dictionary<uint, bool> whiteList = new()
     {
@@ -211,7 +213,23 @@ public static class Command
 
                         reply.Text("Pixiv API is not healthy, please contanct admin.");
                     }
-                    else if (textChain.Content.Contains("原图"))
+                    else if (textChain.Content.StartsWith(" GPT4"))
+                    {
+                        if (group.MemberUin == creator){
+                            EnableGPT4 = !EnableGPT4;
+                            reply = new MessageBuilder();
+                            reply.Text($"已设置GPT4模式为{EnableGPT4}");
+                        }
+                    }
+                    else if (textChain.Content.StartsWith(" voice"))
+                    {
+                        if (group.MemberUin == creator){
+                            EnableVoice = !EnableVoice;
+                            reply = new MessageBuilder();
+                            reply.Text($"已设置voice模式为{EnableVoice}");
+                        }
+                    }
+                    else if (textChain.Content.StartsWith(" 原图"))
                     {
                         reply = new MessageBuilder();
                         var id = textChain.Content.Split("原图")[1].Trim();
@@ -233,27 +251,27 @@ public static class Command
                             reply.Add(ch);
                         }
                     }
-                    else if (textChain.Content.Contains("搜索"))
+                    else if (textChain.Content.StartsWith(" 搜索"))
                     {
                         var id = textChain.Content.Split("搜索")[1].Trim();
                         var rec = await Program.pixivAPI.GetSearchIllustAsync(id);
                         await IllustAsync(rec.Illusts);
 
                     }
-                    else if (textChain.Content.Contains("生成"))
+                    else if (textChain.Content.StartsWith(" 生成"))
                     {
                         var id = textChain.Content.Split("生成")[1].Trim();
                         reply = await Command.OnCommandGenImg(bot, id, group.GroupUin);
 
                     }
-                    else if (textChain.Content.Contains("排行"))
+                    else if (textChain.Content.StartsWith(" 排行"))
                     {
                         var mod = textChain.Content.Split("排行")[1].Trim();
                         var rec = await Program.pixivAPI.GetIllustRankingAsync(mod);
                         await IllustAsync(rec.Illusts);
 
                     }
-                    else if (textChain.Content.Contains("色图"))
+                    else if (textChain.Content.StartsWith(" 色图"))
                     {
                         if (whiteList.ContainsKey(group.GroupUin))
                         {
@@ -267,7 +285,7 @@ public static class Command
                         }
 
                     }
-                    else if (textChain.Content.Contains("图"))
+                    else if (textChain.Content.StartsWith(" 图"))
                     {
                         if (whiteList.ContainsKey(group.GroupUin))
                         {
@@ -281,7 +299,7 @@ public static class Command
                         }
 
                     }
-                    else if (textChain.Content.Contains("收藏"))
+                    else if (textChain.Content.StartsWith(" 收藏"))
                     {
                         reply = new MessageBuilder();
                         var id = textChain.Content.Split("收藏")[1].Trim();
@@ -296,7 +314,7 @@ public static class Command
                 {
                     
                 }
-                else if (textChain.Content.Contains("来首"))
+                else if (textChain.Content.Contains("/来首"))
                     reply = await OnKuwoAsync(textChain);
                 else if (textChain.Content.StartsWith("/ping"))
                     reply = OnCommandPing(textChain);
@@ -391,10 +409,16 @@ public static class Command
                         // });
                         var msgs = msgqueue.ToArray();
                         var newmsgs = msgs.Append(newChat).ToArray();
+                        var model = "gpt-3.5-turbo";
+                        if (EnableGPT4)
+                        {
+                            model = "gpt-4";
+                        }
                         var re = await _client.PostAsJsonAsync("http://43.154.191.136:8000/gptapi", new ChatReq
                         {
                             messages = newmsgs,
-                            apikey = Program.openAiKey
+                            apikey = Program.openAiKey,
+                            model = model
                         });
                         resp = await re.Content.ReadAsStringAsync();   
                         if (resp.Contains("4096 tokens"))
@@ -450,7 +474,7 @@ public static class Command
     }
 
     public static async Task BuildGptRepl(MessageBuilder mb, string repl) {
-        if (repl.Length<100)
+        if (repl.Length<100 && EnableVoice)
         {
             var re = await _client.PostAsJsonAsync(Program.config.Infer , new {
                 prompt = repl,
@@ -979,7 +1003,7 @@ public class ChatReq
 {
     public string apikey { get; set; }
     public ChatReqMsg[] messages { get; set; }
-
+    public string model { get; set; }
 }
 
 public class ChatReqMsg
