@@ -28,7 +28,8 @@ public class DiscordCaller:IDisposable
         await Task.Delay(950);
         if ((int)response.StatusCode >= 400)
         {
-            _log.LogWarning($"Error config: {JsonConvert.SerializeObject(option)}");
+            var text = await response.Content.ReadAsStringAsync();
+            _log.LogWarning($"Error config: {JsonConvert.SerializeObject(option)}  resp: {text}");
         }
 
         return (int)response.StatusCode;

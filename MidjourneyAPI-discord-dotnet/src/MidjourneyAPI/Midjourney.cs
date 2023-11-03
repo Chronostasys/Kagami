@@ -155,7 +155,7 @@ public class Midjourney
 public record MidjourneyImagineRequest
 {
     [JsonProperty("version")] 
-    public string Version { get; set; } = "1077969938624553050";
+    public string Version { get; set; } = "1166847114203123795";
     
     [JsonProperty("id")] 
     public string Id { get; set; } = "938956540159881230";
@@ -185,7 +185,7 @@ public record MidjourneyApplicationCommand
     public string ApplicationId { get; set; } = "936929561302675456";
         
     [JsonProperty("version")]
-    public string Version { get; set; } = "1077969938624553050";
+    public string Version { get; set; } = "1166847114203123795";
     
     [JsonProperty("default_permission")]
     public bool DefaultPermission { get; set; } = true;
