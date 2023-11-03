@@ -12,6 +12,9 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using MidjourneyAPI;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kagami;
 
@@ -19,6 +22,7 @@ public static class Program
 {
     private static Bot _bot = null!;
     internal static PixivCS.PixivAppAPI pixivAPI = new();
+    internal static ServiceCollection services = new ();
 
     internal static bool PixivHealthy = true;
     internal static CloudMusicApi neteaseAPI = new();
@@ -28,14 +32,31 @@ public static class Program
     internal static string openAiKey2 = "";
     internal static Config config = new();
 
+    internal static ServiceProvider provider = null;
+
     public static async Task Main()
     {
+        services.AddLogging(builder =>
+        {
+            builder.SetMinimumLevel(LogLevel.Debug);
+            builder.AddConsole();
+        });
         var token = "1WRRkxi2fNjvrY4ZcMFbyw5sOxnMf2uJojd5UjsCs7w";
         Console.WriteLine("***********************");
         Console.WriteLine(token);
         Console.WriteLine("***********************");
         var config = JsonSerializer.Deserialize<Config>(await File.ReadAllTextAsync("config.json"))!;
         Program.config = config;
+
+        services.AddMidjourney(builder =>
+        {
+            // Note: Please set your custome info.
+            builder.Option.DiscordToken = config.DiscordToken;
+            builder.Option.ChannelId = config.ChannelId;
+            builder.Option.ServerId = config.ServerId;
+        });
+        provider = services.BuildServiceProvider();
+
         string account = config.netease.phone;
         replicatetoken = config.replicate.token;
         openAiKey = config.OpenAIKey;

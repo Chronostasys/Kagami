@@ -24,6 +24,9 @@ using Konata.Codec.Audio.Codecs;
 using NeteaseCloudMusicApi;
 using System.Net;
 using Newtonsoft.Json.Linq;
+using MidjourneyAPI;
+using Microsoft.Extensions.DependencyInjection;
+using AngleSharp;
 
 // ReSharper disable MemberCanBePrivate.Global
 // ReSharper disable UnusedParameter.Local
@@ -310,9 +313,9 @@ public static class Command
                 else if (textChain.Content.StartsWith("/help"))
                     reply = OnCommandHelp(textChain);
 
-                if (reply!=null)
+                if (reply != null)
                 {
-                    
+
                 }
                 else if (textChain.Content.Contains("/来首"))
                     reply = await OnKuwoAsync(textChain);
@@ -322,6 +325,8 @@ public static class Command
                     reply = OnCommandStatus(textChain);
                 else if (textChain.Content.StartsWith("/echo"))
                     reply = OnCommandEcho(textChain, group.Chain);
+                else if (textChain.Content.StartsWith("/imagin"))
+                    reply = await OnImagin(textChain);
                 else if (textChain.Content.StartsWith("/eval"))
                     reply = OnCommandEval(group.Chain);
                 else if (textChain.Content.StartsWith("/member"))
@@ -360,7 +365,7 @@ public static class Command
                         new ChatReqMsg
                         {
                             role = "system",
-                            content = string.Join(" ",a[1..])
+                            content = string.Join(" ", a[1..])
                         }
                         );
 
@@ -420,11 +425,13 @@ public static class Command
                             apikey = Program.openAiKey,
                             model = model
                         });
-                        resp = await re.Content.ReadAsStringAsync();   
+                        resp = await re.Content.ReadAsStringAsync();
                         if (resp.Contains("4096 tokens"))
                         {
                             msgqueue.Dequeue();
-                        }else {
+                        }
+                        else
+                        {
                             break;
                         }
                     }
@@ -435,7 +442,7 @@ public static class Command
                         content = resp
                     });
                     reply = new MessageBuilder();
-                    
+
                     await BuildGptRepl(reply, resp);
                 }
             }
@@ -584,6 +591,29 @@ public static class Command
         var re = await Mp3ToRecChainAsync("https://lb-sycdn.kuwo.cn/8cf96adac93685f4b0cb05dcb60b692f/62d2afa7/resource/n1/86/45/3917959763.mp3");
         mb.Add(re);
         return mb;
+    }
+
+
+    public static async Task<MessageBuilder> OnImagin(TextChain chain)
+    {
+        var midjourney = Program.provider.GetRequiredService<Midjourney>() ?? throw new ArgumentNullException(nameof(Midjourney));
+        var prompt = chain.Content.Replace("/imagin", "");
+        var msg = await midjourney.ImagineAsync(prompt, loading: (message) =>
+        {
+            Console.WriteLine(message.Progress);
+            if (message.Progress == "done")
+            {
+                Console.WriteLine($"{message.Content} -> {message.Url}");
+            }
+            return Task.CompletedTask;
+        });
+        var re = new MessageBuilder();
+        var ich = ImageChain.CreateFromUrl(msg!.Url);
+        re.Add(ich);
+        return re;
+
+
+
     }
 
     public static async Task<MessageBuilder> OnKuwoAsync(TextChain chain)

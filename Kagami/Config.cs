@@ -9,6 +9,9 @@ namespace Kagami
         public string OpenAIKey2 { get; set; }
         public string MagicStr { get; set; }
         public string Infer { get; set; }
+        public string DiscordToken { get; set; }
+        public string ChannelId { get; set; }
+        public string ServerId { get; set; }
     }
 
     public class ReplicateConfig
