@@ -326,7 +326,7 @@ public static class Command
                 else if (textChain.Content.StartsWith("/echo"))
                     reply = OnCommandEcho(textChain, group.Chain);
                 else if (textChain.Content.StartsWith("/imagin"))
-                    reply = await OnImagin(textChain);
+                    reply = await OnImagin(textChain, bot, group.GroupUin);
                 else if (textChain.Content.StartsWith("/eval"))
                     reply = OnCommandEval(group.Chain);
                 else if (textChain.Content.StartsWith("/member"))
@@ -594,22 +594,34 @@ public static class Command
     }
 
 
-    public static async Task<MessageBuilder> OnImagin(TextChain chain)
+    public static MessageBuilder OnImagin(TextChain chain,Bot bot, uint guin)
     {
         var midjourney = Program.provider.GetRequiredService<Midjourney>() ?? throw new ArgumentNullException(nameof(Midjourney));
         var prompt = chain.Content.Replace("/imagin", "");
-        var msg = await midjourney.ImagineAsync(prompt, loading: (message) =>
+        midjourney.ImagineAsync(prompt, loading: (message) =>
         {
             Console.WriteLine(message.Progress);
             if (message.Progress == "done")
             {
+                var ich = ImageChain.CreateFromUrl(message.Url);  
+                var re = new MessageBuilder();
+                re = re.Add(ich);
                 Console.WriteLine($"{message.Content} -> {message.Url}");
+                bot.SendGroupMessage(guin, re);
             }
             return Task.CompletedTask;
+        }).ContinueWith(async (t)=>{
+            var msg = await t;
+            if (msg!=null)
+            {
+                var ich = ImageChain.CreateFromUrl(msg.Url);   
+                var re = new MessageBuilder();
+                re = re.Add(ich);
+                await bot.SendGroupMessage(guin, re);
+            }
         });
         var re = new MessageBuilder();
-        var ich = ImageChain.CreateFromUrl(msg!.Url);
-        re.Add(ich);
+        re.Add(TextChain.Create("正在生成图片"));
         return re;
 
 
