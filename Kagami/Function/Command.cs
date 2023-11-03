@@ -326,7 +326,7 @@ public static class Command
                 else if (textChain.Content.StartsWith("/echo"))
                     reply = OnCommandEcho(textChain, group.Chain);
                 else if (textChain.Content.StartsWith("/imagin"))
-                    reply = await OnImagin(textChain, bot, group.GroupUin);
+                    reply = OnImagin(textChain, bot, group.GroupUin);
                 else if (textChain.Content.StartsWith("/eval"))
                     reply = OnCommandEval(group.Chain);
                 else if (textChain.Content.StartsWith("/member"))
