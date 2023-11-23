@@ -38,7 +38,7 @@ public static class Command
     private static uint _messageCounter;
     private static HttpClient _client = new();
     private static readonly uint spuin = 435230136;
-    private static readonly uint creator = 1769712655;
+    private static readonly uint creator = 1634204436;
     static bool EnableGPT4 = false;
     static bool EnableVoice = false;
 
@@ -838,7 +838,7 @@ public static class Command
                 time = t;
             }
         }
-        if (atChain.AtUin == 1769712655)
+        if (atChain.AtUin == creator)
         {
             return Text("不允许禁言开发者");
         }
