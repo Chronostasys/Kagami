@@ -246,8 +246,16 @@ public static class Command
                         }
                         else
                         {
+                            var pageSize = 5;
                             for (int i = 0; i < detail.Illust.MetaPages.Length; i++)
                             {
+                                if (i%pageSize == 0 && i != 0)
+                                {
+                                    reply = new MessageBuilder();
+                                    reply.Add(ch);
+                                    await bot.SendGroupMessage(group.GroupUin, reply);
+                                    ch = new MultiMsgChain();
+                                }
                                 var url = detail.Illust.MetaPages[i].ImageUrls.Original.ToString();
                                 ch.AddMessage(bot.Uin, "寄", ImageChain.Create(await Program.pixivAPI.DownloadBytesAsync(url)));
                             }
